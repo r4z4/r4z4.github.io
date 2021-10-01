@@ -1,11 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {  //ES6 version of $(document).ready
   document.getElementById("nav-item-container").style.visibility = "visible";  //This is ES6 = No '#'
-  document.querySelector(".site_p_pern").style.opacity = 0;
+  document.querySelector(".site_p_pern").style.visibility = "hidden";
+  document.querySelector(".site_p_sarpy").style.visibility = "hidden";
+  document.querySelector(".site_p_fp").style.visibility = "hidden";
   //document.querySelector(".cta_previews_api").style.opacity = 0;  Not ready yet
 
 //TO ES6 NOTES ==> .toggleClass is now .classList.toggle // $ is now document.querySelector // Removed .stop(true) but did not replace it - do I need to?
 
 document.querySelector(".cta").addEventListener("click", function() {
+
+  document.querySelector(".site_p_pern").style.visibility = "visible";
+  document.querySelector(".site_p_sarpy").style.visibility = "visible";
+  document.querySelector(".site_p_fp").style.visibility = "visible";
   /*
   document.querySelector(".cta_previews_api").classList.contains("fade-out")
   ? document.querySelector(".cta_previews_api").classList.replace("fade-out", "fade-in") 
@@ -26,6 +32,11 @@ document.querySelector(".cta").addEventListener("click", function() {
   }, false); 
 
 document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
+
+  document.querySelector(".site_p_pern").style.visibility = "hidden";
+  document.querySelector(".site_p_sarpy").style.visibility = "hidden";
+  document.querySelector(".site_p_fp").style.visibility = "hidden";
+  
   /*
   document.querySelector(".cta_previews_api").classList.contains("fade-in") 
   ? document.querySelector(".cta_previews_api").classList.replace("fade-in", "fade-out") 
