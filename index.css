@@ -15,14 +15,6 @@ body {
 	height: 10%;
 }
 
-.content {
-  position:relative;
-  padding:200px 0 0 200px;
-  color:#000;
-  z-index:10;
-  height:300px;
-}
-
 .cta {
   outline:none;
   border:none;
@@ -79,39 +71,34 @@ body {
 
 #sitePreviewAPI {
 	height: 200px;
-	width: 200px;
+	width: 300px;
 	opacity: 0;
 }
 
 #sitePreviewPERN {
 	height: 200px;
-	width: 200px;
+	width: 300px;
 	opacity: 0;
 }
 
 #sitePreviewFP {
 	height: 200px;
-	width: 200px;
+	width: 300px;
 	opacity: 0;
 }
 
 #sitePreviewSarpy {
 	height: 200px;
-	width: 200px;
+	width: 300px;
 	opacity: 0;
 }
 
 #nav-item-container	{
-	float: right;
-	height: auto;
-	margin-top: 60px;
 }
 
 #sitePreviews	{
-	margin-top: 20px;
-	display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+	column-count: 2;
+	float: right;
 }
 #nav-item-container img	{
 	height: 200px;
