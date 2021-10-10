@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {  //ES6 version of $(d
   document.querySelector(".site_p_pern").style.visibility = "hidden";
   document.querySelector(".site_p_sarpy").style.visibility = "hidden";
   document.querySelector(".site_p_fp").style.visibility = "hidden";
+  document.querySelector(".site_p_api").style.visibility = "hidden";
   //document.querySelector(".cta_previews_api").style.opacity = 0;  Not ready yet
 
 //TO ES6 NOTES ==> .toggleClass is now .classList.toggle // $ is now document.querySelector // Removed .stop(true) but did not replace it - do I need to?
@@ -10,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function() {  //ES6 version of $(d
 document.querySelector(".cta").addEventListener("click", function() {
 
   document.querySelector(".site_p_pern").style.visibility = "visible";
+  document.querySelector(".site_p_api").style.visibility = "visible";
   document.querySelector(".site_p_sarpy").style.visibility = "visible";
   document.querySelector(".site_p_fp").style.visibility = "visible";
   /*
@@ -29,6 +31,10 @@ document.querySelector(".cta").addEventListener("click", function() {
   ? document.querySelector(".cta_previews_sarpy").classList.replace("fade-out", "fade-in") 
   : document.querySelector(".cta_previews_sarpy").classList.add("fade-in");
 
+  document.querySelector(".cta_previews_api").classList.contains("fade-out")
+  ? document.querySelector(".cta_previews_api").classList.replace("fade-out", "fade-in") 
+  : document.querySelector(".cta_previews_api").classList.add("fade-in");
+
   }, false); 
 
 document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
@@ -36,6 +42,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   document.querySelector(".site_p_pern").style.visibility = "hidden";
   document.querySelector(".site_p_sarpy").style.visibility = "hidden";
   document.querySelector(".site_p_fp").style.visibility = "hidden";
+  document.querySelector(".site_p_api").style.visibility = "hidden";
   
   /*
   document.querySelector(".cta_previews_api").classList.contains("fade-in") 
@@ -53,6 +60,10 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   document.querySelector(".cta_previews_sarpy").classList.contains("fade-in") 
   ? document.querySelector(".cta_previews_sarpy").classList.replace("fade-in", "fade-out") 
   : document.querySelector(".cta_previews_sarpy").classList.add("fade-out");
+
+  document.querySelector(".cta_previews_api").classList.contains("fade-in") 
+  ? document.querySelector(".cta_previews_api").classList.replace("fade-in", "fade-out") 
+  : document.querySelector(".cta_previews_api").classList.add("fade-out");
 
   }, false); 
 
@@ -104,6 +115,22 @@ document.querySelector(".cta_previews_api").addEventListener("mouseleave", funct
 
     document.querySelector(".cta_previews_sarpy").addEventListener("click", function() {
     window.open('https://sarpy-county.vercel.app/', '_blank');
+  });
+
+  document.querySelector(".cta_previews_api").addEventListener("mouseenter", function() {
+    document.querySelector(".site_p_api").classList.contains("fade-out") 
+    ? document.querySelector(".site_p_api").classList.replace("fade-out", "fade-in") 
+    : document.querySelector(".site_p_api").classList.add("fade-in");
+    }, false); 
+    
+  document.querySelector(".cta_previews_api").addEventListener("mouseleave", function() {
+    document.querySelector(".site_p_api").classList.contains("fade-in") 
+    ? document.querySelector(".site_p_api").classList.replace("fade-in", "fade-out") 
+    : document.querySelector(".site_p_api").classList.add("fade-out");
+    }, false);
+
+    document.querySelector(".cta_previews_api").addEventListener("click", function() {
+    window.open('https://city-explorer.vercel.app/', '_blank');
   });
 
   document.querySelector(".cta_previews_fp").addEventListener("mouseover", function() {
