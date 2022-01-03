@@ -74,7 +74,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   }
 
   document.querySelector(".cta_previews_pern").addEventListener("mouseenter", function() {
-    addImage('../images/extrevPERN.PNG');
+    addImage('./images/extrevPERN.PNG');
     addDesc(extrevDesc);
     }, false); 
     
@@ -88,7 +88,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_sarpy").addEventListener("mouseenter", function() {
-    addImage('../images/sarpy.PNG');
+    addImage('./images/sarpy.PNG');
     addDesc(sarpyDesc);
     }, false); 
     
@@ -102,7 +102,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_api").addEventListener("mouseenter", function() {
-    addImage('../images/cityAPIweather.PNG');
+    addImage('./images/cityAPIweather.PNG');
     addDesc(cityDesc);
     }, false); 
     
@@ -116,7 +116,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_fp").addEventListener("mouseover", function() {
-    addImage('../images/fp3.PNG');
+    addImage('./images/fp3.PNG');
     addDesc(frontpageDesc);
     }, false); 
 
@@ -130,7 +130,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_trivia").addEventListener("mouseover", function() {
-    addImage('../images/trivia.PNG');
+    addImage('./images/trivia.PNG');
     addDesc(triviaDesc);
     }, false); 
 
