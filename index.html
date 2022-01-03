@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<title>r4z4 Example Apps</title>
     	<link rel="stylesheet" href="index.css">
-		<link rel="stylesheet" href="mini-nord.min.css">
+		<link rel="stylesheet" href="../mini-nord.min.css">
 		<!--<link rel="stylesheet" href="https://gitcdn.link/repo/Chalarangelo/mini.css/master/dist/mini-default.min.css">-->
 	<script src="index.js"></script>
 </head>
@@ -17,50 +17,21 @@
 
 		<div class="col-md-4">
 			<h1>Example Work</h1>
-			<p>Apps Created // modified for portfolio viewing</p>
+			<p>Apps Created || Modified for Portfolio Viewing</p>
 
 			<button class="cta">Choose an App</button>
 			<button class="cta_wipe">Erase</button>	
+
+			<div id="sitePreviewDesc"></div>
 		</div>
 
-		<div class="col-md-6">
-			<div id="sitePreviews">
-				<div id="sitePreviewAPI" class="site_p_api">
-					<img src='images/cityAPIweather.PNG' alt="api" />
-					<p>A simple City Explorer app to fetch weather data and
-					forecasts and Teleport city information for urban
-					areas.  Utilizes two RESTful API services and serves up
-					via ReactJS on the frontend.</p>
-				</div>
-			
-				<div id="sitePreviewPERN" class="site_p_pern">
-					<img src='images/extrevPERN.PNG' alt="pern" />
-					<p>A PERN stack app designed to mimic commercial
-					approaches to case management. This particular app simulates
-					healthcare appeal cases. Utilizes PostgreSQL as a database,
-					Node.js and Express.js as backend and served via React.js.
-					App enables authorization via a third party service, Keycloak,
-					however that is currently disabled to allow unauthorized
-					access.</p>
-				</div>
-				<div id="sitePreviewFP" class="site_p_fp">
-					<img src='images/fp3.PNG' alt="fp" />
-					<p>A very elongated or longwinded effort at a Newspaper
-					Front Page generator app. Single SPA done with React.js. If anyone
-					knows where I can get a sound like the old timey spinning
-					newspapers in the movies...let me know.<p>
-				</div>
-				<div id="sitePreviewSarpy" class="site_p_sarpy">
-					<img src='images/sarpy.PNG' alt="sarpy" />
-					<p>A simple data visualization project for a local
-					housing authority agency.  Created with ReCharts library
-					using housing data provided by the agency.<p>
-				</div>
-			</div>
+		<div id="sitePreviewFrame" class="col-md-6">
+			<div id="sitePreview"></div>
 		</div>
 
 		<div id="nav-item-container" class="col-md-2">
 			<button id="cta_p" class="cta_previews_api">City Explorer API</button>
+			<button id="cta_p" class="cta_previews_trivia">Simple Trivia PEVN</button>
 			<button id="cta_p" class="cta_previews_pern">External Review PERN</button>
 			<button id="cta_p" class="cta_previews_fp">Front Page Generator</button>
 			<button id="cta_p" class="cta_previews_sarpy">Sarpy County Charts</button>

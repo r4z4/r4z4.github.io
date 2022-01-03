@@ -64,6 +64,9 @@ body {
 	opacity: 0;
 }
 
+.cta_previews_trivia	{
+	opacity: 0;
+}
 
 .cta_previews_sarpy	{
 	opacity: 0;
@@ -87,19 +90,29 @@ body {
 	opacity: 0;
 }
 
+#sitePreviewTrivia {
+	height: 200px;
+	width: 300px;
+	opacity: 0;
+}
+
 #sitePreviewSarpy {
 	height: 200px;
 	width: 300px;
 	opacity: 0;
 }
 
-#nav-item-container	{
+#nav-item-container {
 }
 
-#sitePreviews	{
-	column-count: 2;
-	float: right;
+#sitePreview {
+	margin: 10%;
 }
+
+#sitePreviewDesc {
+	margin: 10%;
+}
+
 #nav-item-container img	{
 	height: 200px;
 	width: 200px;
