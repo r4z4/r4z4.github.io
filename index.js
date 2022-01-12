@@ -2,7 +2,7 @@ const extrevDesc = 'A PERN stack app mimicing commercial approaches to case mana
   'as backend and served via React.js. App enables authorization via a third party service, Keycloak, although currently disabled to allow unauthorized access.';
 const sarpyDesc = 'A simple data visualization project for a local housing authority agency.  Created with ReCharts library using housing data provided by the agency.';
 const cityDesc = 'A simple City Explorer app to fetch weather data and forecasts and Teleport city information for urban areas.  Utilizes two RESTful API' +
-  'services and serves up via ReactJS on the frontend.'
+  'services and serves up via ReactJS on the frontend. ****** (Teleport City API has ended their service - In the process of finding new public API)'
 const frontpageDesc = 'A Newspaper Front Page generator app. Single SPA done with React.js. Still looking for the Batman newspaper audio clip.';
 const triviaDesc = 'A simple trivia game.  Test your knowledge on topics: Movies, Geography, Literature, History, Science-Technology, Animals and Sports.' +
   'Made with Vue.js, Express.js and PostgreSQL.'
