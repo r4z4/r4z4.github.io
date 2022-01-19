@@ -22,7 +22,7 @@ document.querySelector(".cta").addEventListener("click", function() {
 
   document.querySelector(".fwHeader2").classList.contains("fade-out")
   ? document.querySelector(".fwHeader2").classList.replace("fade-out", "fade-in") 
-  : document.querySelector(".fwHeader2).classList.add("fade-in");
+  : document.querySelector(".fwHeader2").classList.add("fade-in");
 
   document.querySelector(".fwHeader3").classList.contains("fade-out")
   ? document.querySelector(".fwHeader3").classList.replace("fade-out", "fade-in") 
