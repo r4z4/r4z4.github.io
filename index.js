@@ -2,10 +2,11 @@ const extrevDesc = 'A PERN stack app mimicing commercial approaches to case mana
   'as backend and served via React.js. App enables authorization via a third party service, Keycloak, although currently disabled to allow unauthorized access.';
 const sarpyDesc = 'A simple data visualization project for a local housing authority agency.  Created with ReCharts library using housing data provided by the agency.';
 const cityDesc = 'A simple City Explorer app to fetch weather data and forecasts and Teleport city information for urban areas.  Utilizes two RESTful API' +
-  'services and serves up via ReactJS on the frontend. ****** (Teleport City API has ended their service - In the process of finding new public API)'
+  'services and serves up via ReactJS on the frontend.'
 const frontpageDesc = 'A Newspaper Front Page generator app. Single SPA done with React.js. Still looking for the Batman newspaper audio clip.';
 const triviaDesc = 'A simple trivia game.  Test your knowledge on topics: Movies, Geography, Literature, History, Science-Technology, Animals and Sports.' +
   'Made with Vue.js, Express.js and PostgreSQL.'
+const elmMonsterDesc = 'A PC version hangman game made with Elm. It really is a delightful little language.'
 
 document.addEventListener("DOMContentLoaded", function() {  //ES6 version of $(document).ready
 
@@ -18,6 +19,10 @@ document.querySelector(".cta").addEventListener("click", function() {
   document.querySelector(".cta_previews_pern").classList.contains("fade-out")
   ? document.querySelector(".cta_previews_pern").classList.replace("fade-out", "fade-in") 
   : document.querySelector(".cta_previews_pern").classList.add("fade-in");
+
+  document.querySelector(".cta_previews_monster").classList.contains("fade-out")
+  ? document.querySelector(".cta_previews_monster").classList.replace("fade-out", "fade-in") 
+  : document.querySelector(".cta_previews_monster").classList.add("fade-in");
 
   document.querySelector(".cta_previews_fp").classList.contains("fade-out")
   ? document.querySelector(".cta_previews_fp").classList.replace("fade-out", "fade-in") 
@@ -42,6 +47,10 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   document.querySelector(".cta_previews_pern").classList.contains("fade-in") 
   ? document.querySelector(".cta_previews_pern").classList.replace("fade-in", "fade-out") 
   : document.querySelector(".cta_previews_pern").classList.add("fade-out");
+
+  document.querySelector(".cta_previews_monster").classList.contains("fade-in") 
+  ? document.querySelector(".cta_previews_monster").classList.replace("fade-in", "fade-out") 
+  : document.querySelector(".cta_previews_monster").classList.add("fade-out");
 
     document.querySelector(".cta_previews_fp").classList.contains("fade-in") 
   ? document.querySelector(".cta_previews_fp").classList.replace("fade-in", "fade-out") 
@@ -74,7 +83,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   }
 
   document.querySelector(".cta_previews_pern").addEventListener("mouseenter", function() {
-    addImage('./images/extrevPERN.PNG');
+    addImage('../images/extrevPERN.PNG');
     addDesc(extrevDesc);
     }, false); 
     
@@ -87,8 +96,22 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
     window.open('https://pern-extrev.herokuapp.com/', '_blank');
   });
 
+  document.querySelector(".cta_previews_monster").addEventListener("mouseenter", function() {
+    addImage('../images/elmMonsterGame.PNG');
+    addDesc(elmMonsterDesc);
+    }, false); 
+    
+  document.querySelector(".cta_previews_monster").addEventListener("mouseleave", function() {
+    document.querySelector("#sitePreview").innerHTML = null;
+    document.querySelector("#sitePreviewDesc").innerHTML = null;
+    }, false);
+
+    document.querySelector(".cta_previews_monster").addEventListener("click", function() {
+    window.open('https://61e7905fdc9c634a9ba14aeb--objective-keller-8aec52.netlify.app/', '_blank');
+  });
+
   document.querySelector(".cta_previews_sarpy").addEventListener("mouseenter", function() {
-    addImage('./images/sarpy.PNG');
+    addImage('../images/sarpy.PNG');
     addDesc(sarpyDesc);
     }, false); 
     
@@ -102,7 +125,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_api").addEventListener("mouseenter", function() {
-    addImage('./images/cityAPIweather.PNG');
+    addImage('../images/cityAPIweather.PNG');
     addDesc(cityDesc);
     }, false); 
     
@@ -116,7 +139,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_fp").addEventListener("mouseover", function() {
-    addImage('./images/fp3.PNG');
+    addImage('../images/fp3.PNG');
     addDesc(frontpageDesc);
     }, false); 
 
@@ -130,7 +153,7 @@ document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.querySelector(".cta_previews_trivia").addEventListener("mouseover", function() {
-    addImage('./images/trivia.PNG');
+    addImage('../images/trivia.PNG');
     addDesc(triviaDesc);
     }, false); 
 
