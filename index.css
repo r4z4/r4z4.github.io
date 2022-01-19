@@ -64,6 +64,10 @@ body {
 	opacity: 0;
 }
 
+.cta_previews_monster	{
+	opacity: 0;
+}
+
 .cta_previews_trivia	{
 	opacity: 0;
 }
@@ -96,6 +100,12 @@ body {
 	opacity: 0;
 }
 
+#sitePreviewMonster {
+	height: 200px;
+	width: 300px;
+	opacity: 0;
+}
+
 #sitePreviewSarpy {
 	height: 200px;
 	width: 300px;
@@ -103,10 +113,19 @@ body {
 }
 
 #nav-item-container {
+	opacity: 0;
+}
+
+.fwHeader {
+	opacity: 0;
 }
 
 #sitePreview {
 	margin: 10%;
+}
+
+#sitePreview img {
+	border-radius: 10px;
 }
 
 #sitePreviewDesc {

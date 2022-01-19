@@ -16,6 +16,10 @@ document.addEventListener("DOMContentLoaded", function() {  //ES6 version of $(d
 
 document.querySelector(".cta").addEventListener("click", function() {
 
+  document.querySelector(".fwHeader").classList.contains("fade-out")
+  ? document.querySelector(".fwHeader").classList.replace("fade-out", "fade-in") 
+  : document.querySelector(".fwHeader").classList.add("fade-in");
+
   document.querySelector(".cta_previews_pern").classList.contains("fade-out")
   ? document.querySelector(".cta_previews_pern").classList.replace("fade-out", "fade-in") 
   : document.querySelector(".cta_previews_pern").classList.add("fade-in");
@@ -43,6 +47,10 @@ document.querySelector(".cta").addEventListener("click", function() {
   }, false); 
 
 document.querySelector( ".cta_wipe" ).addEventListener("click", function(e) {
+
+  document.querySelector(".fwHeader").classList.contains("fade-in") 
+  ? document.querySelector(".fwHeader").classList.replace("fade-in", "fade-out") 
+  : document.querySelector(".fwHeader").classList.add("fade-out");
   
   document.querySelector(".cta_previews_pern").classList.contains("fade-in") 
   ? document.querySelector(".cta_previews_pern").classList.replace("fade-in", "fade-out") 
