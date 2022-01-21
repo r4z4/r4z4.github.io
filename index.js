@@ -140,7 +140,7 @@ document.getElementById( "cta_wipe" ).addEventListener("click", function(e) {
     }, false);
 
     document.getElementById("cta_previews_monster").addEventListener("click", function() {
-    window.open('https://61e7905fdc9c634a9ba14aeb--objective-keller-8aec52.netlify.app/', '_blank');
+    window.open('https://61e97b3acf8d100008c4d7ca--objective-keller-8aec52.netlify.app/', '_blank');
   });
 
   document.getElementById("cta_previews_sarpy").addEventListener("mouseenter", function() {
