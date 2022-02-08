@@ -15,6 +15,27 @@ body {
 	height: 10%;
 }
 
+.row {
+	height: 10%;
+	position: relative;
+}
+#elmLogo {
+	width: 70%;
+	height: 70%;
+	z-index: 0;
+}
+#nav-item-container h2 {
+	width: auto;
+}
+.langLogo img {
+	position: relative;
+	display: inline;
+}
+.langLogo {
+	position: relative;
+	float: right;
+}
+
 #cta {
   outline:none;
   border:none;
@@ -66,6 +87,10 @@ body {
 }
 
 #cta_previews_monster	{
+	opacity: 0;
+}
+
+#cta_previews_scramble	{
 	opacity: 0;
 }
 
@@ -123,9 +148,6 @@ body {
 	opacity: 0;
 }
 
-#nav-item-container {
-}
-
 #fwHeader1 {
 	opacity: 0;
 }
@@ -135,6 +157,18 @@ body {
 }
 
 #fwHeader3 {
+	opacity: 0;
+}
+
+#fwImg1 {
+	opacity: 0;
+}
+
+#fwImg2 {
+	opacity: 0;
+}
+
+#fwImg3 {
 	opacity: 0;
 }
 
@@ -148,11 +182,6 @@ body {
 
 #sitePreviewDesc {
 	margin: 10%;
-}
-
-#nav-item-container img	{
-	height: 200px;
-	width: 200px;
 }
 
 .is-hidden {
