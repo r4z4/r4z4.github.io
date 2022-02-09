@@ -1,9 +1,9 @@
 const extrevDesc = 'A PERN stack app mimicing commercial approaches to case management, in this case healthcare appeals. PostgreSQL for database, Node.js and Express.js' + 
-  'as backend and served via React.js. App enables authorization via a third party service, Keycloak, although currently disabled to allow unauthorized access.';
+  ' as backend and served via React.js. App enables authorization via a third party service, Keycloak, although currently disabled to allow unauthorized access.';
 const sarpyDesc = 'A simple data visualization project for a local housing authority agency.  Created with ReCharts library using housing data provided by the agency.';
 const cityDesc = 'A simple City Explorer app to fetch weather data and forecasts and Teleport city information for urban areas.  Utilizes two RESTful API' +
-  'services and serves up via ReactJS on the frontend. ****NOTE: Troposphere has ended their API services as of 1/2022 - will be updating to new API soon****';
-const frontpageDesc = 'A Newspaper Front Page generator app. Single SPA done with React.js. Still looking for the Batman newspaper audio clip.';
+  'services and serves up via ReactJS on the frontend. ****NOTE: Troposphere has ended their API services as of 1/2022 - Using a temporary API until I can find a better one. Open to suggestions :) ****';
+const frontpageDesc = 'A Newspaper Front Page generator app. SPA done with React.js. Still looking for the Batman newspaper audio clip.';
 const triviaDesc = 'A simple trivia game.  Test your knowledge on topics: Movies, Geography, Literature, History, Science-Technology, Animals and Sports.' +
   'Made with Vue.js, Express.js and PostgreSQL.';
 const elmMonsterDesc = 'A more appropriate version of the hangman game written in Elm. It really is a delightful front end language.';

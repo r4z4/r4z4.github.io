@@ -170,6 +170,13 @@ body {
 
 #fwImg3 {
 	opacity: 0;
+	height: auto; 
+    width: auto; 
+    max-width: 150px; 
+    max-height: 150px;
+	position: relative;
+	display: inline;
+	float: left;
 }
 
 #sitePreview {
@@ -182,6 +189,9 @@ body {
 
 #sitePreviewDesc {
 	margin: 10%;
+	height: 150px;
+	position: relative;
+	display: block;
 }
 
 .is-hidden {
