@@ -7,6 +7,7 @@ const frontpageDesc = 'A Newspaper Front Page generator app. SPA done with React
 const triviaDesc = 'A simple trivia game.  Test your knowledge on topics: Movies, Geography, Literature, History, Science-Technology, Animals and Sports.' +
   'Made with Vue.js, Express.js and PostgreSQL.';
 const elmMonsterDesc = 'A more appropriate version of the hangman game written in Elm. It really is a delightful front end language.';
+const elmMemoryDesc = 'The classic memory game with cards for various categories.  Made with Elm 0.19.';
 const scrambleDesc = 'A typing exercise/brain teaser written in Elm. Working on getting a better API.';
 const quickUIDesc = 'A simple UI for any group or organization.  Sub in any remote or local data to display by details and sort via tags.  Created with Vue.js.';
 
@@ -49,6 +50,10 @@ document.getElementById("cta").addEventListener("click", function() {
   document.getElementById("cta_previews_monster").classList.contains("fade-out")
   ? document.getElementById("cta_previews_monster").classList.replace("fade-out", "fade-in") 
   : document.getElementById("cta_previews_monster").classList.add("fade-in");
+
+  document.getElementById("cta_previews_memory").classList.contains("fade-out")
+  ? document.getElementById("cta_previews_memory").classList.replace("fade-out", "fade-in") 
+  : document.getElementById("cta_previews_memory").classList.add("fade-in");
 
   document.getElementById("cta_previews_scramble").classList.contains("fade-out")
   ? document.getElementById("cta_previews_scramble").classList.replace("fade-out", "fade-in") 
@@ -110,6 +115,10 @@ document.getElementById( "cta_wipe" ).addEventListener("click", function(e) {
   ? document.getElementById("cta_previews_monster").classList.replace("fade-in", "fade-out") 
   : document.getElementById("cta_previews_monster").classList.add("fade-out");
 
+  document.getElementById("cta_previews_memory").classList.contains("fade-in") 
+  ? document.getElementById("cta_previews_memory").classList.replace("fade-in", "fade-out") 
+  : document.getElementById("cta_previews_memory").classList.add("fade-out");
+
   document.getElementById("cta_previews_scramble").classList.contains("fade-in") 
   ? document.getElementById("cta_previews_scramble").classList.replace("fade-in", "fade-out") 
   : document.getElementById("cta_previews_scramble").classList.add("fade-out");
@@ -163,7 +172,7 @@ document.getElementById( "cta_wipe" ).addEventListener("click", function(e) {
   });
 
   document.getElementById("cta_previews_monster").addEventListener("mouseenter", function() {
-    addImage('../images/elmMonsterGame.PNG');
+    addImage('../images/gameMonster.PNG');
     addDesc(elmMonsterDesc);
     }, false); 
     
@@ -174,6 +183,20 @@ document.getElementById( "cta_wipe" ).addEventListener("click", function(e) {
 
     document.getElementById("cta_previews_monster").addEventListener("click", function() {
     window.open('https://objective-keller-8aec52.netlify.app/', '_blank');
+  });
+
+  document.getElementById("cta_previews_memory").addEventListener("mouseenter", function() {
+    addImage('../images/gameMemory.PNG');
+    addDesc(elmMemoryDesc);
+    }, false); 
+    
+  document.getElementById("cta_previews_memory").addEventListener("mouseleave", function() {
+    document.querySelector("#sitePreview").innerHTML = null;
+    document.querySelector("#sitePreviewDesc").innerHTML = null;
+    }, false);
+
+    document.getElementById("cta_previews_memory").addEventListener("click", function() {
+    window.open('https://harmonious-eclair-d432c3.netlify.app/', '_blank');
   });
 
   document.getElementById("cta_previews_scramble").addEventListener("mouseenter", function() {

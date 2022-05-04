@@ -24,6 +24,12 @@ body {
 	height: 70%;
 	z-index: 0;
 }
+
+#vueLogo {
+	width: 70%;
+	height: 70%;
+	z-index: 0;
+}
 #nav-item-container h2 {
 	width: auto;
 }
@@ -36,6 +42,14 @@ body {
 	float: right;
 }
 
+#elm_section {
+	display: block;
+}
+
+#vue_section {
+	display: block;
+}
+
 #cta {
   outline:none;
   border:none;
@@ -45,7 +59,7 @@ body {
   color:#eaeaea;
   box-sizing:border-box;
   margin-top:20px;
-  padding:10px 40px;
+  padding:5px 20px;
 }
 
 #cta_wipe {
@@ -57,7 +71,7 @@ body {
   color:#eaeaea;
   box-sizing:border-box;
   margin-top:20px;
-  padding:10px 40px;
+  padding:5px 20px;
 }
 
 
@@ -71,7 +85,7 @@ body {
   font-size: small;
   box-sizing:border-box;
   margin-top:10px;
-  padding:10px 40px;
+  padding:5px 20px;
 }
 
 #cta_previews_api	{
@@ -87,6 +101,10 @@ body {
 }
 
 #cta_previews_monster	{
+	opacity: 0;
+}
+
+#cta_previews_memory	{
 	opacity: 0;
 }
 
@@ -131,6 +149,12 @@ body {
 }
 
 #sitePreviewMonster {
+	height: 200px;
+	width: 300px;
+	opacity: 0;
+}
+
+#sitePreviewMemory {
 	height: 200px;
 	width: 300px;
 	opacity: 0;
