@@ -17,7 +17,7 @@
 </h1>
 <p class="subtitle"><strong>2023-08-07</strong></p>
 <hr />
-<p><img src="/me/images/elixir/Concuerror.png#md-img-bright" alt="png" /></p>
+<p><img src="/images/elixir/Concuerror.png#md-img-bright" alt="png" /></p>
 <hr />
 <p>Continuing with the theme of just being different, for better or worse, Erlang also gives us a good opportunity to explore two other, more obscure in my experience, methods of testing in Property Based Testing and also Concurrency Testing. I had no prior experience with either and they were both rather interesting to look into.</p>
 <hr />
@@ -48,7 +48,7 @@ can avoid the extentions. That is done by altering the mix.exs configuration fil
 </span></code></pre>
 <p>Now our images are availalbe. But of course we are still early in our testing and still getting failures. I'll just use one of the images but trust me I had many of these. After some trial and error runs and then finally giving up and reading some documentation, turns out there are a few little intricacies that we need to account for first. Here is the fhat first failing image.</p>
 <hr />
-<p><img src="/me/images/elixir/subscription_graph.png#md-img" alt="png" /></p>
+<p><img src="/images/elixir/subscription_graph.png#md-img" alt="png" /></p>
 <hr />
 <p>This is a version of the first concurrency test I was running, with only one interleaving, but even so I was running into some issues, all seeming to do with just making sure that we have our <code>handle_cast</code> or <code>handle_info</code> callbacks properly set up in our module.</p>
 <pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">defmodule </span><span style="color:#ebcb8b;">FanCan</span><span>.</span><span style="color:#ebcb8b;">ConcurrencyTest </span><span style="color:#b48ead;">do
@@ -150,7 +150,7 @@ can avoid the extentions. That is done by altering the mix.exs configuration fil
 <pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>  ./concuerror_test.sh FanCan.ConcurrencyTest --graph my_graph.dot --after_timeout 1000 --treat_as_normal shutdown
 </span></code></pre>
 <p>After all of that, though, we are finally able to get a running test and see some green.</p>
-<p><img src="/me/images/elixir/success_graph.png#md-img" alt="png" /></p>
+<p><img src="/images/elixir/success_graph.png#md-img" alt="png" /></p>
 <p>Similarly, it is much nicer to look at the report of the successful test versus the one that is riddled with errors. Here is the complete .txt file that is generated.</p>
 <pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>Concuerror 0.21.0+build.2371.refaf91d78 started at 12 Jul 2023 17:58:22
 </span><span> Options:

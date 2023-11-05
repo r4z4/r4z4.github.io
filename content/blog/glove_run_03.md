@@ -313,7 +313,7 @@ skplt.metrics.plot_confusion_matrix([target_categories[i] for i in y_test], [tar
 plt.xticks(rotation=90);
 ```
 
-![png](/me/images/glove/run_03.png#img-thumbnail)
+![png](/images/glove/run_03.png#img-thumbnail)
 
 ### Custom Test
 

@@ -21,7 +21,7 @@ One of main reasons I actually wanted to do this little run though is to see wha
 
 Here is our starting point after the first command (plus one or test commands from yesterday).
 
-![png](/me/images/llms/aider_cost_1.png#md-img)
+![png](/images/llms/aider_cost_1.png#md-img)
 
 ---
 
@@ -60,7 +60,7 @@ One useful tip from the site in this regards though is:
 
 
 It does seem to be the one place there is a real lack of progress or status alerts, though, which is great. Here is a screenshot of the CLI as it is "pair programming":
-![png](/me/images/llms/aider_screen.png#md-img)
+![png](/images/llms/aider_screen.png#md-img)
 
 ---
 
@@ -230,7 +230,7 @@ Gets those too but stops short of being able to just read everything and interpr
 
 Here is our ending point after creating a few files and getting some reviews etc.. 
 
-![png](/me/images/llms/aider_cost_2.png#md-img)
+![png](/images/llms/aider_cost_2.png#md-img)
 
 ---
 

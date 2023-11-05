@@ -7,7 +7,7 @@ order: 3
 --- 
 
 ---
-![png](/me/images/elixir/Concuerror.png#md-img-bright)
+![png](/images/elixir/Concuerror.png#md-img-bright)
 
 ---
 
@@ -57,7 +57,7 @@ dot -Tpng my_graph.dot > my_graph.png
 Now our images are availalbe. But of course we are still early in our testing and still getting failures. I'll just use one of the images but trust me I had many of these. After some trial and error runs and then finally giving up and reading some documentation, turns out there are a few little intricacies that we need to account for first. Here is the fhat first failing image.
 
 --- 
-![png](/me/images/elixir/subscription_graph.png#md-img)
+![png](/images/elixir/subscription_graph.png#md-img)
 
 ---
 
@@ -176,7 +176,7 @@ Here was the final command that I ended up needing to run in order to satisfy al
 
 After all of that, though, we are finally able to get a running test and see some green.
 
-![png](/me/images/elixir/success_graph.png#md-img)
+![png](/images/elixir/success_graph.png#md-img)
 
 
 Similarly, it is much nicer to look at the report of the successful test versus the one that is riddled with errors. Here is the complete .txt file that is generated.

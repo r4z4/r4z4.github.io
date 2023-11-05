@@ -188,13 +188,13 @@ for index,product in enumerate(df_dtm.columns):
 
 ---
 
-![png](/me/images/trec/eda/trec_eda_0.png#md-img)
+![png](/images/trec/eda/trec_eda_0.png#md-img)
 
 ---
 
 ---
 
-![png](/me/images/trec/eda/trec_eda_1.png#md-img)
+![png](/images/trec/eda/trec_eda_1.png#md-img)
 
 ---
 
@@ -246,7 +246,7 @@ plt.show()
 
 ---
 
-![png](/me/images/trec/eda/trec_eda_6.png#md-img)
+![png](/images/trec/eda/trec_eda_6.png#md-img)
 
 ---
 
