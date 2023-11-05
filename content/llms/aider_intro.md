@@ -21,7 +21,7 @@ One of main reasons I actually wanted to do this little run though is to see wha
 
 Here is our starting point after the first command (plus one or test commands from yesterday).
 
-![png](/images/llms/aider_cost_1.png#md-img)
+![png](/images/llms/aider_cost_1.png#md-img-hor)
 
 ---
 
@@ -29,7 +29,7 @@ Here is our starting point after the first command (plus one or test commands fr
 
 ```bash
     src/config.rs src/main.rs
-    > Create a directory in the root directory titled templated (./templates) and inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
+    > Create a directory in the root directory titled templates (./templates) and inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
     Inside of the ./templates/homepage.hbs file, create a basic handlebars layout file with a basic HTML page.
 
     To create the ./templates/homepage.hbs file with a basic handlebars layout, you can use the following content:
@@ -60,7 +60,7 @@ One useful tip from the site in this regards though is:
 
 
 It does seem to be the one place there is a real lack of progress or status alerts, though, which is great. Here is a screenshot of the CLI as it is "pair programming":
-![png](/images/llms/aider_screen.png#md-img)
+![png](/images/llms/aider_screen.png#md-img-hor)
 
 ---
 
@@ -230,7 +230,7 @@ Gets those too but stops short of being able to just read everything and interpr
 
 Here is our ending point after creating a few files and getting some reviews etc.. 
 
-![png](/images/llms/aider_cost_2.png#md-img)
+![png](/images/llms/aider_cost_2.png#md-img-hor)
 
 ---
 

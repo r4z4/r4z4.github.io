@@ -171,6 +171,6 @@ _________________________________________________________________
 
 ---
 
-![png](/images/trec/run_01/run_01.png#md-img)
+![png](/images/trec/run_01/run_01.png#md-img-vert)
 
 ---

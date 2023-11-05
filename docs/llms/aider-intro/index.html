@@ -24,7 +24,7 @@
 <p>If tools like aider truly are going to be a new version of pair programmers, and at this point it would be hard to argue that they will not, in some form or fashion, be relevant moving forward – then it will take lots of iterations and building up some new muscle memories (in the brain and body) to really remember how best to use them and get the most out of them.</p>
 <p>One of main reasons I actually wanted to do this little run though is to see what kinds of costs I was getting. Before I go all in and start actually using this thing, to the point where I might lost track of any costs or usage statistics, I just wanted a baseline understanding of what the prompt → token → cost calculations might look like.</p>
 <p>Here is our starting point after the first command (plus one or test commands from yesterday).</p>
-<p><img src="/images/llms/aider_cost_1.png#md-img" alt="png" /></p>
+<p><img src="/images/llms/aider_cost_1.png#md-img-hor" alt="png" /></p>
 <hr />
 <h2 id="creating-the-templates">Creating the templates</h2>
 <pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>    </span><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
@@ -57,7 +57,7 @@
 <p>Use Control-C to safely interrupt GPT if it isn’t providing a useful response. The partial response remains in the conversation, so you can refer to it when you reply to GPT with more information or direction.</p>
 </blockquote>
 <p>It does seem to be the one place there is a real lack of progress or status alerts, though, which is great. Here is a screenshot of the CLI as it is &quot;pair programming&quot;:
-<img src="/images/llms/aider_screen.png#md-img" alt="png" /></p>
+<img src="/images/llms/aider_screen.png#md-img-hor" alt="png" /></p>
 <hr />
 <h2 id="getting-a-review">Getting a Review</h2>
 <pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
@@ -189,7 +189,7 @@
 <hr />
 <h2 id="the-costs">The Costs</h2>
 <p>Here is our ending point after creating a few files and getting some reviews etc.. </p>
-<p><img src="/images/llms/aider_cost_2.png#md-img" alt="png" /></p>
+<p><img src="/images/llms/aider_cost_2.png#md-img-hor" alt="png" /></p>
 <hr />
 <p>I am betting this will only improve with time but another thing to note is the context window size. I attempted to feed it a rather large example file which ended up backfiring and I was greeted with the following error message. Also make sure to pay attention to the prompts and what files it is wanted to add to the chat. I was assuming it wanted to add main.rs (but that was already in the chat). Again, though, just the process of learning the ropes I suppose.</p>
 <p>Overall though, I am pretty impressed. I will be continuing to see how far I can get with aider without much of my own thought or assistance - like that would help anyways though :/.</p>

@@ -190,7 +190,14 @@ code img[src$='#md-img-bright'] {
   filter: brightness(0.6);
 }
 
-code img[src$='#md-img'] { 
+code img[src$='#md-img-hor'] { 
+  display: inherit;
+  width: 60%;
+  height: auto;
+  margin: 1% auto;
+}
+
+code img[src$='#md-img-vert'] { 
   display: inherit;
   width: 20%;
   height: auto;
