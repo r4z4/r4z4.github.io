@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  TREC Dataset with EDA - Easy Data Augmentation - Methods
+</h1>
+<p class="subtitle"><strong>2023-07-02</strong></p>
+<p>This is another dataset where we have a relatively small dataset, and so we'll be using the EDA methods for some simple data augmentation, which will allow us to quickly and easily maximize the size of the data that we have. We will use the Synonym Repalcement, Random Insertion and Random Swap methods and see where that will take us.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>pandas </span><span style="color:#b48ead;">as </span><span>pd
+</span><span style="color:#b48ead;">import </span><span>random
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df = pd.</span><span style="color:#bf616a;">read_pickle</span><span>(</span><span style="color:#b48ead;">r</span><span>&#39;</span><span style="color:#a3be8c;">data/dataframes/final_cleaned_normalized</span><span style="color:#d08770;">.</span><span style="color:#a3be8c;">pkl</span><span>&#39;)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>random
+</span><span style="color:#b48ead;">from </span><span>random </span><span style="color:#b48ead;">import </span><span>shuffle
+</span><span>random.</span><span style="color:#bf616a;">seed</span><span>(</span><span style="color:#d08770;">1</span><span>)
+</span><span>
+</span><span>stop_words = [&#39;</span><span style="color:#a3be8c;">i</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">me</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">my</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">myself</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">we</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">our</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">ours</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">ourselves</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">you</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">your</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">yours</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">yourself</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">yourselves</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">he</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">him</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">his</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">himself</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">she</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">her</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">hers</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">herself</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">it</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">its</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">itself</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">they</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">them</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">their</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">theirs</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">themselves</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">what</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">which</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">who</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">whom</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">this</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">that</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">these</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">those</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">am</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">is</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">are</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">was</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">were</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">be</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">been</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">being</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">have</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">has</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">had</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">having</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">do</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">does</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">did</span><span>&#39;,
+</span><span>			&#39;</span><span style="color:#a3be8c;">doing</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">a</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">an</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">the</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">and</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">but</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">if</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">or</span><span>&#39;,
+</span><span>			&#39;</span><span style="color:#a3be8c;">because</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">as</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">until</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">while</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">of</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">at</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">by</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">for</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">with</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">about</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">against</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">between</span><span>&#39;,
+</span><span>			&#39;</span><span style="color:#a3be8c;">into</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">through</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">during</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">before</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">after</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">above</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">below</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">to</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">from</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">up</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">down</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">in</span><span>&#39;,
+</span><span>			&#39;</span><span style="color:#a3be8c;">out</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">on</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">off</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">over</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">under</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">again</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">further</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">then</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">once</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">here</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">there</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">when</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">where</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">why</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">how</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">all</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">any</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">both</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">each</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">few</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">more</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">most</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">other</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">some</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">such</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">no</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">nor</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">not</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">only</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">own</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">same</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">so</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">than</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">too</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">very</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">s</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">t</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">can</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">will</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">just</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">don</span><span>&#39;, 
+</span><span>			&#39;</span><span style="color:#a3be8c;">should</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">now</span><span>&#39;, &#39;&#39;]
+</span><span>
+</span><span style="color:#65737e;">#cleaning up text
+</span><span style="color:#b48ead;">import </span><span>re
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_only_chars</span><span>(</span><span style="color:#bf616a;">line</span><span>):
+</span><span>
+</span><span>    clean_line = &quot;&quot;
+</span><span>
+</span><span>    line = line.</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">’</span><span>&quot;, &quot;&quot;)
+</span><span>    line = line.</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">&#39;</span><span>&quot;, &quot;&quot;)
+</span><span>    line = line.</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">-</span><span>&quot;, &quot; &quot;) </span><span style="color:#65737e;">#replace hyphens with spaces
+</span><span>    line = line.</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#96b5b4;">\t</span><span>&quot;, &quot; &quot;)
+</span><span>    line = line.</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#96b5b4;">\n</span><span>&quot;, &quot; &quot;)
+</span><span>    line = line.</span><span style="color:#bf616a;">lower</span><span>()
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">for </span><span>char </span><span style="color:#b48ead;">in </span><span>line:
+</span><span>        </span><span style="color:#b48ead;">if </span><span>char in &#39;</span><span style="color:#a3be8c;">qwertyuiopasdfghjklzxcvbnm </span><span>&#39;:
+</span><span>            clean_line += char
+</span><span>        </span><span style="color:#b48ead;">else</span><span>:
+</span><span>            clean_line += &#39; &#39;
+</span><span>
+</span><span>    clean_line = re.</span><span style="color:#bf616a;">sub</span><span>(&#39;</span><span style="color:#a3be8c;"> +</span><span>&#39;,&#39; &#39;,clean_line) </span><span style="color:#65737e;">#delete extra spaces
+</span><span>    </span><span style="color:#b48ead;">if </span><span>clean_line[</span><span style="color:#d08770;">0</span><span>] == &#39; &#39;:
+</span><span>        clean_line = clean_line[</span><span style="color:#d08770;">1</span><span>:]
+</span><span>    </span><span style="color:#b48ead;">return </span><span>clean_line
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>nltk.corpus </span><span style="color:#b48ead;">import </span><span>wordnet
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">########################################################################
+</span><span style="color:#65737e;"># Synonym replacement
+</span><span style="color:#65737e;"># Replace n words in the sentence with synonyms from wordnet
+</span><span style="color:#65737e;">########################################################################
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>nltk
+</span><span>nltk.</span><span style="color:#bf616a;">download</span><span>(&#39;</span><span style="color:#a3be8c;">wordnet</span><span>&#39;)
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">synonym_replacement</span><span>(</span><span style="color:#bf616a;">words</span><span>, </span><span style="color:#bf616a;">n</span><span>):
+</span><span>	new_words = words.</span><span style="color:#bf616a;">copy</span><span>()
+</span><span>	random_word_list = </span><span style="color:#bf616a;">list</span><span>(</span><span style="color:#bf616a;">set</span><span>([word </span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span>words </span><span style="color:#b48ead;">if </span><span>word not in stop_words]))
+</span><span>	random.</span><span style="color:#bf616a;">shuffle</span><span>(random_word_list)
+</span><span>	num_replaced = </span><span style="color:#d08770;">0
+</span><span>	</span><span style="color:#b48ead;">for </span><span>random_word </span><span style="color:#b48ead;">in </span><span>random_word_list:
+</span><span>		synonyms = </span><span style="color:#bf616a;">get_synonyms</span><span>(random_word)
+</span><span>		</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(synonyms) &gt;= </span><span style="color:#d08770;">1</span><span>:
+</span><span>			synonym = random.</span><span style="color:#bf616a;">choice</span><span>(</span><span style="color:#bf616a;">list</span><span>(synonyms))
+</span><span>			new_words = [synonym </span><span style="color:#b48ead;">if </span><span>word == random_word </span><span style="color:#b48ead;">else </span><span>word </span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span>new_words]
+</span><span>			</span><span style="color:#65737e;">#print(&quot;replaced&quot;, random_word, &quot;with&quot;, synonym)
+</span><span>			num_replaced += </span><span style="color:#d08770;">1
+</span><span>		</span><span style="color:#b48ead;">if </span><span>num_replaced &gt;= n: </span><span style="color:#65737e;">#only replace up to n words
+</span><span>			</span><span style="color:#b48ead;">break
+</span><span>
+</span><span>	</span><span style="color:#65737e;">#this is stupid but we need it, trust me
+</span><span>	sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(new_words)
+</span><span>	new_words = sentence.</span><span style="color:#bf616a;">split</span><span>(&#39; &#39;)
+</span><span>
+</span><span>	</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_synonyms</span><span>(</span><span style="color:#bf616a;">word</span><span>):
+</span><span>	synonyms = </span><span style="color:#bf616a;">set</span><span>()
+</span><span>	</span><span style="color:#b48ead;">for </span><span>syn </span><span style="color:#b48ead;">in </span><span>wordnet.</span><span style="color:#bf616a;">synsets</span><span>(word): 
+</span><span>		</span><span style="color:#b48ead;">for </span><span>l </span><span style="color:#b48ead;">in </span><span>syn.</span><span style="color:#bf616a;">lemmas</span><span>(): 
+</span><span>			synonym = l.</span><span style="color:#bf616a;">name</span><span>().</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">_</span><span>&quot;, &quot; &quot;).</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">-</span><span>&quot;, &quot; &quot;).</span><span style="color:#bf616a;">lower</span><span>()
+</span><span>			synonym = &quot;&quot;.</span><span style="color:#bf616a;">join</span><span>([char </span><span style="color:#b48ead;">for </span><span>char </span><span style="color:#b48ead;">in </span><span>synonym </span><span style="color:#b48ead;">if </span><span>char in &#39;</span><span style="color:#a3be8c;"> qwertyuiopasdfghjklzxcvbnm</span><span>&#39;])
+</span><span>			synonyms.</span><span style="color:#bf616a;">add</span><span>(synonym) 
+</span><span>	</span><span style="color:#b48ead;">if </span><span>word in synonyms:
+</span><span>		synonyms.</span><span style="color:#bf616a;">remove</span><span>(word)
+</span><span>	</span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">list</span><span>(synonyms)
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">replace_rejoin_sr</span><span>(</span><span style="color:#bf616a;">x</span><span>):
+</span><span>    words = </span><span style="color:#bf616a;">synonym_replacement</span><span>(x.</span><span style="color:#bf616a;">split</span><span>(), </span><span style="color:#d08770;">1</span><span>)
+</span><span>    sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(words)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>sentence
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[nltk_data] Downloading package wordnet to /root/nltk_data...
+</span><span>[nltk_data]   Package wordnet is already up-to-date!
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#bf616a;">replace_rejoin_sr</span><span>(&#39;</span><span style="color:#a3be8c;">What is the total land mass of the continent of africa</span><span>&#39;)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>&#39;What is the add up land mass of the continent of africa&#39;
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">## Loop through and apply synonym_replacement for each headline
+</span><span>df[&#39;</span><span style="color:#a3be8c;">question_cleaned_sr</span><span>&#39;] = df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;].</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>: </span><span style="color:#bf616a;">replace_rejoin_sr</span><span>(x))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<p>Note: I did need to add a check for word length - <code>if len(words) &gt; 1:</code> - here -&gt; Again, just a function of us using such a limited dataset. </p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">########################################################################
+</span><span style="color:#65737e;"># Random insertion
+</span><span style="color:#65737e;"># Randomly insert n words into the sentence
+</span><span style="color:#65737e;">########################################################################
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">random_insertion</span><span>(</span><span style="color:#bf616a;">words</span><span>, </span><span style="color:#bf616a;">n</span><span>):
+</span><span>	new_words = words.</span><span style="color:#bf616a;">copy</span><span>()
+</span><span>	</span><span style="color:#b48ead;">for </span><span style="color:#bf616a;">_ </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(n):
+</span><span>		</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(words) &gt; </span><span style="color:#d08770;">1</span><span>:
+</span><span>			</span><span style="color:#bf616a;">add_word</span><span>(new_words)
+</span><span>	</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">add_word</span><span>(</span><span style="color:#bf616a;">new_words</span><span>):
+</span><span>	synonyms = []
+</span><span>	counter = </span><span style="color:#d08770;">0
+</span><span>	</span><span style="color:#b48ead;">while </span><span style="color:#96b5b4;">len</span><span>(synonyms) &lt; </span><span style="color:#d08770;">1</span><span>:
+</span><span>		random_word = new_words[random.</span><span style="color:#bf616a;">randint</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(new_words)-</span><span style="color:#d08770;">1</span><span>)]
+</span><span>		synonyms = </span><span style="color:#bf616a;">get_synonyms</span><span>(random_word)
+</span><span>		counter += </span><span style="color:#d08770;">1
+</span><span>		</span><span style="color:#b48ead;">if </span><span>counter &gt;= </span><span style="color:#d08770;">10</span><span>:
+</span><span>			</span><span style="color:#b48ead;">return
+</span><span>	random_synonym = synonyms[</span><span style="color:#d08770;">0</span><span>]
+</span><span>	random_idx = random.</span><span style="color:#bf616a;">randint</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(new_words)-</span><span style="color:#d08770;">1</span><span>)
+</span><span>	new_words.</span><span style="color:#bf616a;">insert</span><span>(random_idx, random_synonym)
+</span><span>	
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">replace_rejoin_ri</span><span>(</span><span style="color:#bf616a;">x</span><span>):
+</span><span>    words = </span><span style="color:#bf616a;">random_insertion</span><span>(x.</span><span style="color:#bf616a;">split</span><span>(), </span><span style="color:#d08770;">1</span><span>)
+</span><span>    sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(words)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>sentence
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#bf616a;">replace_rejoin_ri</span><span>(&#39;</span><span style="color:#a3be8c;">What is the total land mass of the continent of africa</span><span>&#39;)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>&#39;What is the total represent land mass of the continent of africa&#39;
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df[&#39;</span><span style="color:#a3be8c;">question_cleaned_ri</span><span>&#39;] = df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;].</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>: </span><span style="color:#bf616a;">replace_rejoin_ri</span><span>(x))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">########################################################################
+</span><span style="color:#65737e;"># Random swap
+</span><span style="color:#65737e;"># Randomly swap two words in the sentence n times
+</span><span style="color:#65737e;">########################################################################
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">random_swap</span><span>(</span><span style="color:#bf616a;">words</span><span>, </span><span style="color:#bf616a;">n</span><span>):
+</span><span>	new_words = words.</span><span style="color:#bf616a;">copy</span><span>()
+</span><span>	</span><span style="color:#b48ead;">for </span><span style="color:#bf616a;">_ </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(n):
+</span><span>		</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(words) &gt; </span><span style="color:#d08770;">1</span><span>:
+</span><span>			new_words = </span><span style="color:#bf616a;">swap_word</span><span>(new_words)
+</span><span>	</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">swap_word</span><span>(</span><span style="color:#bf616a;">new_words</span><span>):
+</span><span>	random_idx_1 = random.</span><span style="color:#bf616a;">randint</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(new_words)-</span><span style="color:#d08770;">1</span><span>)
+</span><span>	random_idx_2 = random_idx_1
+</span><span>	counter = </span><span style="color:#d08770;">0
+</span><span>	</span><span style="color:#b48ead;">while </span><span>random_idx_2 == random_idx_1:
+</span><span>		random_idx_2 = random.</span><span style="color:#bf616a;">randint</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(new_words)-</span><span style="color:#d08770;">1</span><span>)
+</span><span>		counter += </span><span style="color:#d08770;">1
+</span><span>		</span><span style="color:#b48ead;">if </span><span>counter &gt; </span><span style="color:#d08770;">3</span><span>:
+</span><span>			</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>	new_words[random_idx_1], new_words[random_idx_2] = new_words[random_idx_2], new_words[random_idx_1] 
+</span><span>	</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">replace_rejoin_rs</span><span>(</span><span style="color:#bf616a;">x</span><span>):
+</span><span>    words = </span><span style="color:#bf616a;">random_swap</span><span>(x.</span><span style="color:#bf616a;">split</span><span>(), </span><span style="color:#d08770;">1</span><span>)
+</span><span>    sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(words)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>sentence
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#bf616a;">replace_rejoin_rs</span><span>(&#39;</span><span style="color:#a3be8c;">What is the total land mass of the continent of africa</span><span>&#39;)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>&#39;What is the total land mass africa the continent of of&#39;
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df[&#39;</span><span style="color:#a3be8c;">question_cleaned_rs</span><span>&#39;] = df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;].</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>: </span><span style="color:#bf616a;">replace_rejoin_rs</span><span>(x))
+</span></code></pre>
+<hr />
+<p>For our particular case here we will not be using the Random Deletion. We can still perform the augmentation though and add it to our dataframe for reference, and I belive you will see why there is really no need for us to use this method here.</p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">########################################################################
+</span><span style="color:#65737e;"># Random deletion
+</span><span style="color:#65737e;"># Randomly delete words from the sentence with probability p
+</span><span style="color:#65737e;">########################################################################
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">random_deletion</span><span>(</span><span style="color:#bf616a;">words</span><span>, </span><span style="color:#bf616a;">p</span><span>):
+</span><span>
+</span><span>	</span><span style="color:#65737e;">#obviously, if there&#39;s only one word, don&#39;t delete it
+</span><span>	</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(words) == </span><span style="color:#d08770;">1</span><span>:
+</span><span>		</span><span style="color:#b48ead;">return </span><span>words
+</span><span>
+</span><span>	</span><span style="color:#65737e;">#randomly delete words with probability p
+</span><span>	new_words = []
+</span><span>	</span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span>words:
+</span><span>		r = random.</span><span style="color:#bf616a;">uniform</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#d08770;">1</span><span>)
+</span><span>		</span><span style="color:#b48ead;">if </span><span>r &gt; p:
+</span><span>			new_words.</span><span style="color:#bf616a;">append</span><span>(word)
+</span><span>
+</span><span>	</span><span style="color:#65737e;">#if you end up deleting all words, just return a random word
+</span><span>	</span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(new_words) == </span><span style="color:#d08770;">0</span><span>:
+</span><span>		rand_int = random.</span><span style="color:#bf616a;">randint</span><span>(</span><span style="color:#d08770;">0</span><span>, </span><span style="color:#96b5b4;">len</span><span>(words)-</span><span style="color:#d08770;">1</span><span>)
+</span><span>		</span><span style="color:#b48ead;">return </span><span>[words[rand_int]]
+</span><span>
+</span><span>	</span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">replace_rejoin_rd</span><span>(</span><span style="color:#bf616a;">x</span><span>):
+</span><span>    words = </span><span style="color:#bf616a;">random_swap</span><span>(x.</span><span style="color:#bf616a;">split</span><span>(), </span><span style="color:#d08770;">1</span><span>)
+</span><span>    sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(words)
+</span><span>    </span><span style="color:#b48ead;">return </span><span>sentence
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#bf616a;">replace_rejoin_rd</span><span>(&#39;</span><span style="color:#a3be8c;">What is the total land mass of the continent of africa</span><span>&#39;)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>&#39;What the is total land mass of the continent of africa&#39;
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df[&#39;</span><span style="color:#a3be8c;">question_cleaned_rd</span><span>&#39;] = df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;].</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>: </span><span style="color:#bf616a;">replace_rejoin_rs</span><span>(x))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">tail</span><span>(</span><span style="color:#d08770;">4</span><span>)
+</span></code></pre>
+<table><thead><tr><th style="text-align: right"></th><th style="text-align: left">entity</th><th style="text-align: left">question</th><th>question_normalized</th><th>question_cleaned</th><th>question_normalized</th><th>question_cleaned</th><th>question_normalized</th><th>question_cleaned</th></tr></thead><tbody>
+<tr><td style="text-align: right">5432</td><td style="text-align: left">HUM</td><td style="text-align: left">What English explorer discovered and named Vir...</td><td>what english explorer discovered and named vir...</td><td>english explor discov name virginia</td><td>english explor discov refer virginia</td><td>english explor discov va name virginia</td><td>english virginia discov name explor</td><td>explor english discov name virginia</td></tr>
+<tr><td style="text-align: right">5433</td><td style="text-align: left">ENTY</td><td style="text-align: left">What war added jeep and quisling to the Englis...</td><td>what war added jeep and quisling to the englis...</td><td>war ad jeep quisl english languag</td><td>warfare ad jeep quisl english languag</td><td>war ad jeep quisl english people english languag</td><td>ad war jeep quisl english languag</td><td>war ad jeep english quisl languag</td></tr>
+<tr><td style="text-align: right">5434</td><td style="text-align: left">LOC</td><td style="text-align: left">What country is home to Heineken beer</td><td>what country is home to heineken beer</td><td>countri home heineken beer</td><td>countri dwelling house heineken beer</td><td>countri home heineken rest home beer</td><td>countri home heineken beer</td><td>countri home beer heineken</td></tr>
+<tr><td style="text-align: right">5435</td><td style="text-align: left">HUM</td><td style="text-align: left">What people make up half the Soviet Union 's p...</td><td>what people make up half the soviet union s po...</td><td>peopl make half soviet union popul</td><td>peopl realise half soviet union popul</td><td>peopl make north half soviet union popul</td><td>peopl popul half soviet union make</td><td>make peopl half soviet union popul</td></tr>
+</tbody></table>
+<hr />
+<p>Keeping with the theme of staying simple and concise, to augment our data - since we have a relatively very small dataset - we will turn to some simple techniques that were highlighted in a popular 2019 paper titled <a href="https://arxiv.org/abs/1901.11196">&quot;EDA: Easy Data Augmentation Techniques for Boosting Performance on Text Classification Tasks&quot;</a>. In the paper they introduce four simple techniques to performing data augmentation, and we will utilize them all for our dataset.</p>
+<p>One very important point to bring up is the attention paid to the issue of how much augmentation to apply. For our purposes here, we are mainly just exploring in order to get a sense of what the techniques do and how they can - in general - affect our data. If we were engaging with real data for real business solutions, it is important to test a variety of sample sizes and tune with various hyperparameters. There is a large section in the paper dedicated to the question of how many sentences or items (naug) to augment, and note that researchers promote trying several out.</p>
+<blockquote>
+<p>&quot;For smaller training sets, over-fitting was more likely, so generating many augmented sentences yielded large performance boosts. For larger training sets, adding more than four augmented sentences per original sentence was unhelpful since models tend to generalize properly when large quantities of real data are available. (pg. 4)&quot;</p>
+</blockquote>
+<h3 id="table-3-recommended-usage-parameters">Table 3: Recommended usage parameters.</h3>
+<hr />
+<table><thead><tr><th style="text-align: left">Ntrain</th><th style="text-align: center">  α</th><th style="text-align: right">  naug</th></tr></thead><tbody>
+<tr><td style="text-align: left">500</td><td style="text-align: center">  0.05</td><td style="text-align: right">  16</td></tr>
+<tr><td style="text-align: left">2,000</td><td style="text-align: center">  0.05</td><td style="text-align: right">  8</td></tr>
+<tr><td style="text-align: left">5,000</td><td style="text-align: center">  0.1</td><td style="text-align: right">  4</td></tr>
+<tr><td style="text-align: left">More</td><td style="text-align: center">  0.1</td><td style="text-align: right">  4</td></tr>
+</tbody></table>
+<hr />
+<h4 id="table-1-sentences-generated-using-eda-sr-synonym-replacement-ri-random-insertion-rs-random-swap-rd-random-deletion">Table 1: Sentences generated using EDA. SR: synonym replacement. RI: random insertion. RS: random swap. RD: random deletion.</h4>
+<hr />
+<table><thead><tr><th style="text-align: left">Operation</th><th style="text-align: left">  Sentence</th></tr></thead><tbody>
+<tr><td style="text-align: left">None</td><td style="text-align: left">  A sad, superior human comedy played out on the back roads of life.</td></tr>
+<tr><td style="text-align: left">SR</td><td style="text-align: left">  A lamentable, superior human comedy played out on the backward road of life.</td></tr>
+<tr><td style="text-align: left">RI</td><td style="text-align: left">  A sad, superior human comedy played out on funniness the back roads of life.</td></tr>
+<tr><td style="text-align: left">RS</td><td style="text-align: left">  A sad, superior human comedy played out on roads back the of life.</td></tr>
+<tr><td style="text-align: left">RD</td><td style="text-align: left">  A sad, superior human out on the roads of life.</td></tr>
+</tbody></table>
+<hr />
+
+
+    </div>
+  </section>
+</body>
+
+</html>

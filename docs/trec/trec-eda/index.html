@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  TREC Dataset with EDA
+</h1>
+<p class="subtitle"><strong>2023-06-29</strong></p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span style="color:#b48ead;">import </span><span>regex </span><span style="color:#b48ead;">as </span><span>re
+</span><span style="color:#b48ead;">import </span><span>pandas </span><span style="color:#b48ead;">as </span><span>pd
+</span><span style="color:#b48ead;">from </span><span>tqdm.notebook </span><span style="color:#b48ead;">import </span><span>tqdm
+</span><span style="color:#b48ead;">import </span><span>matplotlib.pyplot </span><span style="color:#b48ead;">as </span><span>plt
+</span><span style="color:#b48ead;">import </span><span>seaborn </span><span style="color:#b48ead;">as </span><span>sns
+</span><span style="color:#b48ead;">from </span><span>sklearn.feature_extraction.text </span><span style="color:#b48ead;">import </span><span>CountVectorizer
+</span><span style="color:#b48ead;">from </span><span>wordcloud </span><span style="color:#b48ead;">import </span><span>WordCloud
+</span><span style="color:#b48ead;">from </span><span>textwrap </span><span style="color:#b48ead;">import </span><span>wrap
+</span><span style="color:#b48ead;">import </span><span>os
+</span><span style="color:#b48ead;">import </span><span>sys
+</span><span>sys.path.</span><span style="color:#bf616a;">insert</span><span>(</span><span style="color:#d08770;">1</span><span>, os.path.</span><span style="color:#bf616a;">join</span><span>(sys.path[</span><span style="color:#d08770;">0</span><span>], &#39;</span><span style="color:#a3be8c;">..</span><span>&#39;))
+</span><span style="color:#b48ead;">import </span><span>utils
+</span></code></pre>
+<h2 id="load-raw-data">Load Raw Data</h2>
+<p>There were a couple of steps that I took that I will spare us all the details of, but just to give you an idea here is a snippet of the data in its original form:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>...
+</span><span>ENTY:animal What predators exist on Antarctica ?
+</span><span>DESC:manner How is energy created ?
+</span><span>NUM:other What is the quantity of American soldiers still unaccounted for from the Vietnam war ?
+</span><span>LOC:mount What was the highest mountain on earth before Mount Everest was discovered ?
+</span><span>HUM:gr What Polynesian people inhabit New Zealand ?
+</span><span>...
+</span></code></pre>
+<p>&amp; so I needed to perform some initial cleaning on the text data to transform it into this form, where we can pick up below:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>...
+</span><span>ENTY@@animal@@What predators exist on Antarctica@@?
+</span><span>DESC@@manner@@How is energy created@@?
+</span><span>NUM@@other@@What is the quantity of American soldiers still unaccounted for from the Vietnam war@@?
+</span><span>LOC@@mount@@What was the highest mountain on earth before Mount Everest was discovered@@?
+</span><span>HU@@gr@@What Polynesian people inhabit New Zealand@@?
+</span><span>...
+</span></code></pre>
+<p>Don't ask why I chose the delimiter.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df1 = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/train_1000.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span><span>df2 = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/train_2000.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span><span>df3 = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/train_3000.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span><span>df4 = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/train_4000.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span><span>df5 = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/train_5500.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span><span>df_test = pd.</span><span style="color:#bf616a;">read_csv</span><span>(&#39;</span><span style="color:#a3be8c;">data/clean/processed/test_100.txt</span><span>&#39;, </span><span style="color:#bf616a;">sep</span><span>=&#39;</span><span style="color:#a3be8c;">@@</span><span>&#39;)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>frames = [df1, df2, df3, df4, df5]
+</span><span>
+</span><span>df = pd.</span><span style="color:#bf616a;">concat</span><span>(frames)
+</span><span>df.shape
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(15452, 4)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<h2 id="clean-preprocess-data">Clean / Preprocess Data</h2>
+<hr />
+<p>There are several steps that we need to take here. Many of them will depend on the type of data that we have &amp; our end goal, though, too. For certain types of text we may or may not be interested in numerical values, so we may strip those out with a function. Or maybe we need to keep any punctuation around. In most cases we will remove any punctuation, but the idea is to always be thinking about your data and how you may need to adapt it for your specific use case to get the most out of it.</p>
+<hr />
+<p>Some other alterations that are included in this step but may seem a little different are the more advanced linguistic techniques of stemming and lemmatization. We won't get into particulars here but the same idea applies, in that if you are to use these methods it is always good to review just what they are doing and why they may or may not be needed for our case. With that in mind, let's take a look and see what we should do here.</p>
+<p>First things first, we're keeping things simple and only interested in two columns.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df = df.</span><span style="color:#bf616a;">drop</span><span>([&#39;</span><span style="color:#a3be8c;">definition</span><span>&#39;,&#39;</span><span style="color:#a3be8c;">punctuation</span><span>&#39;], </span><span style="color:#bf616a;">axis</span><span>=&#39;</span><span style="color:#a3be8c;">columns</span><span>&#39;)
+</span></code></pre>
+<p>I have two functions in my utils.py that do some text cleaning using a combination of the methods mentioned above. Here is what each of those looks like and the corresponding output:</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">clean_text</span><span>(</span><span style="color:#bf616a;">text</span><span>, ):
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">tokenize_text</span><span>(</span><span style="color:#bf616a;">text</span><span>):
+</span><span>        </span><span style="color:#b48ead;">return </span><span>[w </span><span style="color:#b48ead;">for </span><span>s </span><span style="color:#b48ead;">in </span><span style="color:#bf616a;">sent_tokenize</span><span>(text) </span><span style="color:#b48ead;">for </span><span>w </span><span style="color:#b48ead;">in </span><span style="color:#bf616a;">word_tokenize</span><span>(s)]
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">remove_special_characters</span><span>(</span><span style="color:#bf616a;">text</span><span>, </span><span style="color:#bf616a;">characters</span><span>=string.punctuation.</span><span style="color:#bf616a;">replace</span><span>(&#39;</span><span style="color:#a3be8c;">-</span><span>&#39;, &#39;&#39;)):
+</span><span>        tokens = </span><span style="color:#bf616a;">tokenize_text</span><span>(text)
+</span><span>        pattern = re.</span><span style="color:#bf616a;">compile</span><span>(&#39;</span><span style="color:#a3be8c;">[</span><span style="color:#d08770;">{}</span><span style="color:#a3be8c;">]</span><span>&#39;.</span><span style="color:#bf616a;">format</span><span>(re.</span><span style="color:#bf616a;">escape</span><span>(characters)))
+</span><span>        </span><span style="color:#b48ead;">return </span><span>&#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(</span><span style="color:#96b5b4;">filter</span><span>(</span><span style="color:#d08770;">None</span><span>, [pattern.</span><span style="color:#bf616a;">sub</span><span>(&#39;&#39;, t) </span><span style="color:#b48ead;">for </span><span>t </span><span style="color:#b48ead;">in </span><span>tokens]))
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">stem_text</span><span>(</span><span style="color:#bf616a;">text</span><span>, </span><span style="color:#bf616a;">stemmer</span><span>=default_stemmer):
+</span><span>        tokens = </span><span style="color:#bf616a;">tokenize_text</span><span>(text)
+</span><span>        </span><span style="color:#b48ead;">return </span><span>&#39; &#39;.</span><span style="color:#bf616a;">join</span><span>([stemmer.</span><span style="color:#bf616a;">stem</span><span>(t) </span><span style="color:#b48ead;">for </span><span>t </span><span style="color:#b48ead;">in </span><span>tokens])
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">remove_stopwords</span><span>(</span><span style="color:#bf616a;">text</span><span>, </span><span style="color:#bf616a;">stop_words</span><span>=default_stopwords):
+</span><span>        tokens = [w </span><span style="color:#b48ead;">for </span><span>w </span><span style="color:#b48ead;">in </span><span style="color:#bf616a;">tokenize_text</span><span>(text) </span><span style="color:#b48ead;">if </span><span>w not in stop_words]
+</span><span>        </span><span style="color:#b48ead;">return </span><span>&#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(tokens)
+</span><span>
+</span><span>    text = text.</span><span style="color:#bf616a;">strip</span><span>(&#39; &#39;) </span><span style="color:#65737e;"># strip whitespaces
+</span><span>    text = text.</span><span style="color:#bf616a;">lower</span><span>() </span><span style="color:#65737e;"># lowercase
+</span><span>    text = </span><span style="color:#bf616a;">stem_text</span><span>(text) </span><span style="color:#65737e;"># stemming
+</span><span>    text = </span><span style="color:#bf616a;">remove_special_characters</span><span>(text) </span><span style="color:#65737e;"># remove punctuation and symbols
+</span><span>    text = </span><span style="color:#bf616a;">remove_stopwords</span><span>(text) </span><span style="color:#65737e;"># remove stopwords
+</span><span>    </span><span style="color:#65737e;">#text.strip(&#39; &#39;) # strip whitespaces again?
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">return </span><span>text
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">normalize_text</span><span>(</span><span style="color:#bf616a;">s</span><span>):
+</span><span>    s = s.</span><span style="color:#bf616a;">lower</span><span>()
+</span><span>    
+</span><span>    </span><span style="color:#65737e;"># remove punctuation that is not word-internal (e.g., hyphens, apostrophes)
+</span><span>    s = re.</span><span style="color:#bf616a;">sub</span><span>(&#39;</span><span style="color:#a3be8c;">\s\W</span><span>&#39;,&#39; &#39;,s)
+</span><span>    s = re.</span><span style="color:#bf616a;">sub</span><span>(&#39;</span><span style="color:#a3be8c;">\W\s</span><span>&#39;,&#39; &#39;,s)
+</span><span>    
+</span><span>    </span><span style="color:#65737e;"># make sure we didn&#39;t introduce any double spaces
+</span><span>    s = re.</span><span style="color:#bf616a;">sub</span><span>(&#39;</span><span style="color:#a3be8c;">\s+</span><span>&#39;,&#39; &#39;,s)
+</span><span>    
+</span><span>    </span><span style="color:#b48ead;">return </span><span>s
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df[&#39;</span><span style="color:#a3be8c;">question_normalized</span><span>&#39;] = [utils.</span><span style="color:#bf616a;">normalize_text</span><span>(s) </span><span style="color:#b48ead;">for </span><span>s </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">question</span><span>&#39;]]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;] = [utils.</span><span style="color:#bf616a;">clean_text</span><span>(s) </span><span style="color:#b48ead;">for </span><span>s </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">question</span><span>&#39;]]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">head</span><span>(</span><span style="color:#d08770;">20</span><span>)
+</span></code></pre>
+<h4 id="creating-a-document-term-matrix">Creating a Document Term Matrix</h4>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df_grouped=df[[&#39;</span><span style="color:#a3be8c;">entity</span><span>&#39;,&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;]].</span><span style="color:#bf616a;">groupby</span><span>(</span><span style="color:#bf616a;">by</span><span>=&#39;</span><span style="color:#a3be8c;">entity</span><span>&#39;).</span><span style="color:#bf616a;">agg</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>:&#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(x))
+</span><span>df_grouped.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>cv=</span><span style="color:#bf616a;">CountVectorizer</span><span>(</span><span style="color:#bf616a;">analyzer</span><span>=&#39;</span><span style="color:#a3be8c;">word</span><span>&#39;)
+</span><span>data=cv.</span><span style="color:#bf616a;">fit_transform</span><span>(df_grouped[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;])
+</span><span>df_dtm = pd.</span><span style="color:#bf616a;">DataFrame</span><span>(data.</span><span style="color:#bf616a;">toarray</span><span>(), </span><span style="color:#bf616a;">columns</span><span>=cv.</span><span style="color:#bf616a;">get_feature_names_out</span><span>())
+</span><span>df_dtm.index=df_grouped.index
+</span><span>df_dtm.</span><span style="color:#bf616a;">head</span><span>(</span><span style="color:#d08770;">6</span><span>)
+</span></code></pre>
+<p>Just another good example of why doing these sometimes tedious tasks has value. Might want to come back and examine what exactly items like 000 and 000th are doing in the dataset. Might be indicative of larger issues, or just a one off that we need to drop. Also, I just want to make sure that my instinct of why 007 is in there holds true.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;"># Function for generating word clouds
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">generate_wordcloud</span><span>(</span><span style="color:#bf616a;">data</span><span>,</span><span style="color:#bf616a;">title</span><span>):
+</span><span>  wc = </span><span style="color:#bf616a;">WordCloud</span><span>(</span><span style="color:#bf616a;">width</span><span>=</span><span style="color:#d08770;">400</span><span>, </span><span style="color:#bf616a;">height</span><span>=</span><span style="color:#d08770;">330</span><span>, </span><span style="color:#bf616a;">max_words</span><span>=</span><span style="color:#d08770;">150</span><span>,</span><span style="color:#bf616a;">colormap</span><span>=&quot;</span><span style="color:#a3be8c;">Dark2</span><span>&quot;).</span><span style="color:#bf616a;">generate_from_frequencies</span><span>(data)
+</span><span>  plt.</span><span style="color:#bf616a;">figure</span><span>(</span><span style="color:#bf616a;">figsize</span><span>=(</span><span style="color:#d08770;">10</span><span>,</span><span style="color:#d08770;">8</span><span>))
+</span><span>  plt.</span><span style="color:#bf616a;">imshow</span><span>(wc, </span><span style="color:#bf616a;">interpolation</span><span>=&#39;</span><span style="color:#a3be8c;">bilinear</span><span>&#39;)
+</span><span>  plt.</span><span style="color:#bf616a;">axis</span><span>(&quot;</span><span style="color:#a3be8c;">off</span><span>&quot;)
+</span><span>  plt.</span><span style="color:#bf616a;">title</span><span>(&#39;</span><span style="color:#96b5b4;">\n</span><span>&#39;.</span><span style="color:#bf616a;">join</span><span>(</span><span style="color:#bf616a;">wrap</span><span>(title,</span><span style="color:#d08770;">60</span><span>)),</span><span style="color:#bf616a;">fontsize</span><span>=</span><span style="color:#d08770;">13</span><span>)
+</span><span>  plt.</span><span style="color:#bf616a;">show</span><span>()
+</span><span>  
+</span><span style="color:#65737e;"># Transposing document term matrix
+</span><span>df_dtm=df_dtm.</span><span style="color:#bf616a;">transpose</span><span>()
+</span><span>
+</span><span style="color:#65737e;"># Plotting word cloud for each product
+</span><span style="color:#b48ead;">for </span><span>index,product </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">enumerate</span><span>(df_dtm.columns):
+</span><span>  </span><span style="color:#bf616a;">generate_wordcloud</span><span>(df_dtm[product].</span><span style="color:#bf616a;">sort_values</span><span>(</span><span style="color:#bf616a;">ascending</span><span>=</span><span style="color:#d08770;">False</span><span>),product)
+</span></code></pre>
+<hr />
+<p><img src="/me/images/trec/eda/trec_eda_0.png#md-img" alt="png" /></p>
+<hr />
+<hr />
+<p><img src="/me/images/trec/eda/trec_eda_1.png#md-img" alt="png" /></p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>doe_stems = [
+</span><span>    &#39;</span><span style="color:#a3be8c;">Jim does like oranges</span><span>&#39;,
+</span><span>    &#39;</span><span style="color:#a3be8c;">Jim does not like oranges</span><span>&#39;,
+</span><span>    &quot;</span><span style="color:#a3be8c;">Jim doesn&#39;t like oranges</span><span>&quot;, 
+</span><span>    &#39;</span><span style="color:#a3be8c;">Jim doe like oranges</span><span>&#39;
+</span><span>    ]
+</span><span>results = [utils.</span><span style="color:#bf616a;">clean_text</span><span>(s) </span><span style="color:#b48ead;">for </span><span>s </span><span style="color:#b48ead;">in </span><span>doe_stems]
+</span><span style="color:#96b5b4;">print</span><span>(results)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[&#39;jim doe like orang&#39;, &#39;jim doe like orang&#39;, &#39;jim doe nt like orang&#39;, &#39;jim doe like orang&#39;]
+</span></code></pre>
+<p>I'll be honest I do not actually use WordClouds all that often in practice, but in this case I think it helps us quite a bit. We already know not to expect too much from this dataset, but at least so far we can see that it makes sense. If we were really digging in we would want to address the &quot;doe&quot; stem and maybe find a way to differentiate that between the two different sets. Or at least it might warrant just examining the data and seeing where it appears, and maybe a strategy will emerge from there.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>textblob </span><span style="color:#b48ead;">import </span><span>TextBlob
+</span><span>df[&#39;</span><span style="color:#a3be8c;">polarity</span><span>&#39;]=df[&#39;</span><span style="color:#a3be8c;">question_cleaned</span><span>&#39;].</span><span style="color:#bf616a;">apply</span><span>(</span><span style="color:#b48ead;">lambda </span><span style="color:#bf616a;">x</span><span>:</span><span style="color:#bf616a;">TextBlob</span><span>(x).sentiment.polarity)
+</span><span>df.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>question_polarity_sorted=pd.</span><span style="color:#bf616a;">DataFrame</span><span>(df.</span><span style="color:#bf616a;">groupby</span><span>(&#39;</span><span style="color:#a3be8c;">entity</span><span>&#39;)[&#39;</span><span style="color:#a3be8c;">polarity</span><span>&#39;].</span><span style="color:#bf616a;">mean</span><span>().</span><span style="color:#bf616a;">sort_values</span><span>(</span><span style="color:#bf616a;">ascending</span><span>=</span><span style="color:#d08770;">True</span><span>))
+</span><span>
+</span><span>plt.</span><span style="color:#bf616a;">figure</span><span>(</span><span style="color:#bf616a;">figsize</span><span>=(</span><span style="color:#d08770;">16</span><span>,</span><span style="color:#d08770;">8</span><span>))
+</span><span>plt.</span><span style="color:#bf616a;">xlabel</span><span>(&#39;</span><span style="color:#a3be8c;">Polarity</span><span>&#39;)
+</span><span>plt.</span><span style="color:#bf616a;">ylabel</span><span>(&#39;</span><span style="color:#a3be8c;">Entities</span><span>&#39;)
+</span><span>plt.</span><span style="color:#bf616a;">title</span><span>(&#39;</span><span style="color:#a3be8c;">Polarity of Different Question Entities from TREC Dataset</span><span>&#39;)
+</span><span>polarity_graph=plt.</span><span style="color:#bf616a;">barh</span><span>(np.</span><span style="color:#bf616a;">arange</span><span>(</span><span style="color:#96b5b4;">len</span><span>(question_polarity_sorted.index)),question_polarity_sorted[&#39;</span><span style="color:#a3be8c;">polarity</span><span>&#39;],</span><span style="color:#bf616a;">color</span><span>=&#39;</span><span style="color:#a3be8c;">orange</span><span>&#39;,)
+</span><span>
+</span><span style="color:#65737e;"># Writing product names on bar
+</span><span style="color:#b48ead;">for </span><span>bar,product </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">zip</span><span>(polarity_graph,question_polarity_sorted.index):
+</span><span>  plt.</span><span style="color:#bf616a;">text</span><span>(</span><span style="color:#d08770;">0.005</span><span>,bar.</span><span style="color:#bf616a;">get_y</span><span>()+bar.</span><span style="color:#bf616a;">get_width</span><span>(),&#39;</span><span style="color:#d08770;">{}</span><span>&#39;.</span><span style="color:#bf616a;">format</span><span>(product),</span><span style="color:#bf616a;">va</span><span>=&#39;</span><span style="color:#a3be8c;">center</span><span>&#39;,</span><span style="color:#bf616a;">fontsize</span><span>=</span><span style="color:#d08770;">11</span><span>,</span><span style="color:#bf616a;">color</span><span>=&#39;</span><span style="color:#a3be8c;">black</span><span>&#39;)
+</span><span>
+</span><span style="color:#65737e;"># Writing polarity values on graph
+</span><span style="color:#b48ead;">for </span><span>bar,polarity </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">zip</span><span>(polarity_graph,question_polarity_sorted[&#39;</span><span style="color:#a3be8c;">polarity</span><span>&#39;]):
+</span><span>  plt.</span><span style="color:#bf616a;">text</span><span>(bar.</span><span style="color:#bf616a;">get_width</span><span>()+</span><span style="color:#d08770;">0.001</span><span>,bar.</span><span style="color:#bf616a;">get_y</span><span>()+bar.</span><span style="color:#bf616a;">get_width</span><span>(),&#39;</span><span style="color:#d08770;">%.3f</span><span>&#39;%polarity,</span><span style="color:#bf616a;">va</span><span>=&#39;</span><span style="color:#a3be8c;">center</span><span>&#39;,</span><span style="color:#bf616a;">fontsize</span><span>=</span><span style="color:#d08770;">11</span><span>,</span><span style="color:#bf616a;">color</span><span>=&#39;</span><span style="color:#a3be8c;">black</span><span>&#39;)
+</span><span>  
+</span><span>plt.</span><span style="color:#bf616a;">yticks</span><span>([])
+</span><span>plt.</span><span style="color:#bf616a;">show</span><span>()
+</span></code></pre>
+<hr />
+<p><img src="/me/images/trec/eda/trec_eda_6.png#md-img" alt="png" /></p>
+<hr />
+
+
+    </div>
+  </section>
+</body>
+
+</html>

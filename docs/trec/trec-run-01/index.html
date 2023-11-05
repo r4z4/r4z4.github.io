@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  TREC Dataset with EDA - Run 01
+</h1>
+<p class="subtitle"><strong>2023-07-06</strong></p>
+<p>I guess a little introduction is warranted. I have always had a need to document my progress on anything. That used to be very scattered notes on paper, then scattered notes in various note-taking software formats. Having a living place to put down my thoughts just seemed like the natural progression, and that coupled with a rejuvenation of interest in model training and NLP in general – which lends itself to plenty of ever-changing concepts and the acronyms to go along with them – led me to this. This is my journey is trying to learn this stuff.  It is here to help me, but of course maybe some other lost soul will stumble across it.</p>
+<h3 id="the-trial">The Trial:</h3>
+<p>The first realization I think we all make when getting into this is the data out there is hard to come by, and from my experience that is only amplified when dealing with textual data. When you start getting into some of these large examples with extensive corpora then too, it just seems to muddy the waters. This is why I just wanted to start simple and struggle through some of these concepts again. So I chose a pretty simple dataset and just working with some basic text classification for now.</p>
+<h3 id="the-idea">The Idea:</h3>
+<p>Another thing I have noticed about myself is that having a concrete idea or goal in mind always helps. In this instance that just means coming up with some meaningless, contrived example that someone probably twenty years ago might’ve asked for as a product. So for some basic text classification, the idea is that a user would come to a site, being entering their input or submit their input, and the model will then classify that text and do whatever with it, and here we will just end up suggesting some simple template. Again, this will be completely contrived and trivial and may not look the prettiest.</p>
+<h3 id="the-dataset">The Dataset:</h3>
+<p>TREC dataset contains 5500 labeled questions in training set and another 500 for test set. The dataset has 6 labels, 50 level-2 labels. Average length of each sentence is 10, vocabulary size of 8700.</p>
+<hr />
+<p>Also we save it so we can reload and pickup training. Plenty of fighting with this finally settled on: seems best approach is to use the default <code>.save()</code> method for the TensorFlow SavedModel format (as opposed to a .keras or .h5 extension).</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>model_file = &#39;</span><span style="color:#a3be8c;">models/5500</span><span>&#39;
+</span><span>model.</span><span style="color:#bf616a;">save</span><span>(model_file)
+</span></code></pre>
+<p>This approach actually creates a directory with asset files vs. a single file. To load, simple point to dir with <code>.load()</code>.
+The NumPy method <code>assert_allclose()</code> also comes in handy for some extra reassurance with the saving &amp; loading of the file.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>loaded_model = keras.models.</span><span style="color:#bf616a;">load_model</span><span>(model_file)
+</span><span>np.testing.</span><span style="color:#bf616a;">assert_allclose</span><span>(
+</span><span>    model.</span><span style="color:#bf616a;">predict</span><span>(validation_padded), loaded_model.</span><span style="color:#bf616a;">predict</span><span>(validation_padded)
+</span><span>)
+</span></code></pre>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;"># fit model
+</span><span>num_epochs = </span><span style="color:#d08770;">20
+</span><span>history = model.</span><span style="color:#bf616a;">fit</span><span>(train_padded, y_train, 
+</span><span>                    </span><span style="color:#bf616a;">epochs</span><span>=num_epochs, </span><span style="color:#bf616a;">verbose</span><span>=</span><span style="color:#d08770;">1</span><span>,
+</span><span>                    </span><span style="color:#bf616a;">validation_split</span><span>=</span><span style="color:#d08770;">0.3</span><span>)
+</span><span>
+</span><span style="color:#65737e;"># predict values
+</span><span>pred = model.</span><span style="color:#bf616a;">predict</span><span>(validation_padded)
+</span></code></pre>
+<p>And these are our results from run_01:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>Epoch 1/20
+</span><span>271/271 [==============================] - 2s 6ms/step - loss: 1.7022 - accuracy: 0.2399 - val_loss: 1.6490 - val_accuracy: 0.2346
+</span><span>Epoch 2/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.6434 - accuracy: 0.2399 - val_loss: 1.6400 - val_accuracy: 0.2346
+</span><span>Epoch 3/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.6331 - accuracy: 0.2595 - val_loss: 1.6273 - val_accuracy: 0.2351
+</span><span>Epoch 4/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.6058 - accuracy: 0.3265 - val_loss: 1.5795 - val_accuracy: 0.3715
+</span><span>Epoch 5/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.5230 - accuracy: 0.3810 - val_loss: 1.4659 - val_accuracy: 0.3845
+</span><span>Epoch 6/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.3778 - accuracy: 0.4375 - val_loss: 1.3146 - val_accuracy: 0.4389
+</span><span>Epoch 7/20
+</span><span>271/271 [==============================] - 1s 4ms/step - loss: 1.2270 - accuracy: 0.5098 - val_loss: 1.1808 - val_accuracy: 0.5096
+</span><span>Epoch 8/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 1.0963 - accuracy: 0.5848 - val_loss: 1.0686 - val_accuracy: 0.6045
+</span><span>Epoch 9/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 0.9813 - accuracy: 0.6503 - val_loss: 0.9594 - val_accuracy: 0.6767
+</span><span>Epoch 10/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 0.8706 - accuracy: 0.7126 - val_loss: 0.8621 - val_accuracy: 0.7223
+</span><span>Epoch 11/20
+</span><span>271/271 [==============================] - 1s 4ms/step - loss: 0.7750 - accuracy: 0.7575 - val_loss: 0.7807 - val_accuracy: 0.7352
+</span><span>Epoch 12/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 0.6943 - accuracy: 0.7914 - val_loss: 0.7047 - val_accuracy: 0.7924
+</span><span>Epoch 13/20
+</span><span>...
+</span><span>271/271 [==============================] - 1s 4ms/step - loss: 0.3765 - accuracy: 0.8919 - val_loss: 0.4500 - val_accuracy: 0.8628
+</span><span>Epoch 20/20
+</span><span>271/271 [==============================] - 1s 3ms/step - loss: 0.3526 - accuracy: 0.8984 - val_loss: 0.4333 - val_accuracy: 0.8673
+</span><span>97/97 [==============================] - 0s 1ms/step
+</span></code></pre>
+<p>Now, it is easy to be fooled by the 89% and think we are great at this. Truth is this data is very insufficient and we have not done much to really challenge our model. As we go on to subsequent runs, though, we will see this score drop and vary and then come back up, which is reassuring. It does appear to be learning, but then the real question becomes how and why it is learning certain things in certain ways, how can we change this, and more importantly what can we do about it? What tools or insights can it give us, and from that, what value can we derive from it?</p>
+<p>I will be printing and saving some simple visulaization images for later reference. I do not want to examine them all now without much to compare them too in these early stages, but they are certain valuable artifacts worth saving so that we can
+revisit them later. I will just simply create a directory to store them for later viewing.</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">print</span><span>(pred)
+</span><span>
+</span><span>    [[</span><span style="color:#d08770;">0.10461694 0.89111507 0.00184274 0.04174655 0.14603339 0.99627024</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0.02512768 0.07283066 0.14759105 0.98934025 0.1748144  0.80831176</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0.32353488 0.58661866 0.8057708  0.11234509 0.5822517  0.07421786</span><span>]
+</span><span>    </span><span style="color:#d08770;">...
+</span><span>    [</span><span style="color:#d08770;">0.2541242  0.75612414 0.49566412 0.08180005 0.30037883 0.2799908 </span><span>]
+</span><span>    [</span><span style="color:#d08770;">0.2660918  0.73733705 0.48640287 0.09529052 0.3022969  0.28448245</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0.40638423 0.8813672  0.9125333  0.02715247 0.2143805  0.03576801</span><span>]]
+</span><span>
+</span><span style="color:#96b5b4;">print</span><span>(y_test)
+</span><span>
+</span><span>    [[</span><span style="color:#d08770;">0. 0. 0. 0. 0. 1.</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0. 0. 0. 1. 0. 0.</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0. 0. 1. 0. 0. 0.</span><span>]
+</span><span>    </span><span style="color:#d08770;">...
+</span><span>    [</span><span style="color:#d08770;">0. 0. 0. 0. 0. 1.</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0. 0. 0. 0. 0. 1.</span><span>]
+</span><span>    [</span><span style="color:#d08770;">0. 0. 1. 0. 0. 0.</span><span>]]
+</span></code></pre>
+<hr />
+<h4 id="the-dataset-and-documentation-can-be-found-here">The dataset and documentation can be found <a href="https://cogcomp.seas.upenn.edu/Data/QA/QC/">here</a></h4>
+<h4 id="you-can-also-access-the-data-via-pytorch-details-can-be-found-on-pytorch-docs">You can also access the data via PyTorch. Details can be found <a href="https://pytorchnlp.readthedocs.io/en/latest/source/torchnlp.datasets.html">on PyTorch docs</a></h4>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>    torchnlp.datasets.</span><span style="color:#bf616a;">trec_dataset</span><span>(</span><span style="color:#bf616a;">directory</span><span>=&#39;</span><span style="color:#a3be8c;">data/trec/</span><span>&#39;, </span><span style="color:#bf616a;">train</span><span>=</span><span style="color:#d08770;">False</span><span>, </span><span style="color:#bf616a;">test</span><span>=</span><span style="color:#d08770;">False</span><span>, </span><span style="color:#bf616a;">train_filename</span><span>=&#39;</span><span style="color:#a3be8c;">train_5500.label</span><span>&#39;,
+</span><span>    </span><span style="color:#bf616a;">test_filename</span><span>=&#39;</span><span style="color:#a3be8c;">TREC_10.label</span><span>&#39;, </span><span style="color:#bf616a;">check_files</span><span>=[&#39;</span><span style="color:#a3be8c;">train_5500.label</span><span>&#39;], </span><span style="color:#bf616a;">urls</span><span>=[&#39;</span><span style="color:#a3be8c;">http://cogcomp.org/Data/QA/QC/train_5500</span><span style="background-color:#bf616a;color:#2b303b;">
+</span><span>    label&#39;</span><span style="color:#a3be8c;">, </span><span>&#39;http://cogcomp.org/Data/</span><span style="color:#bf616a;">QA</span><span>/</span><span style="color:#bf616a;">QC</span><span>/</span><span style="color:#bf616a;">TREC_10</span><span>.label&#39;</span><span style="color:#a3be8c;">], fine_grained=False)</span><span style="background-color:#bf616a;color:#2b303b;">
+</span></code></pre>
+<p>Let's see if it works with Notebook Output</p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>_________________________________________________________________
+</span><span style="color:#bf616a;">Layer </span><span>(</span><span style="color:#96b5b4;">type</span><span>)                Output Shape              Param </span><span style="color:#65737e;">#   
+</span><span>=================================================================
+</span><span style="color:#bf616a;">embedding </span><span>(Embedding)       (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">120</span><span>, </span><span style="color:#d08770;">128</span><span>)          </span><span style="color:#d08770;">1663616   
+</span><span>                                                                
+</span><span style="color:#bf616a;">global_average_pooling1d </span><span>(</span><span style="color:#bf616a;">G  </span><span>(</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">128</span><span>)              </span><span style="color:#d08770;">0         
+</span><span>lobalAveragePooling1D)                                          
+</span><span>                                                                
+</span><span style="color:#bf616a;">dense </span><span>(Dense)               (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">24</span><span>)                </span><span style="color:#d08770;">3096      
+</span><span>                                                                
+</span><span style="color:#bf616a;">dense_1 </span><span>(Dense)             (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">6</span><span>)                 </span><span style="color:#d08770;">150       
+</span><span>                                                                
+</span><span>=================================================================
+</span><span>Total params: </span><span style="color:#d08770;">1</span><span>,</span><span style="color:#d08770;">666</span><span>,</span><span style="color:#d08770;">862
+</span><span>Trainable params: </span><span style="color:#d08770;">1</span><span>,</span><span style="color:#d08770;">666</span><span>,</span><span style="color:#d08770;">862
+</span><span>Non-trainable params: </span><span style="color:#d08770;">0
+</span><span>_________________________________________________________________
+</span></code></pre>
+<h5 id="you-can-find-the-notebook-here">You can find the notebook <a href="http://www.github.com/r4z4">here</a></h5>
+<hr />
+<p>For the sake of brevity I'll just highlight some of the main steps, but all in all it is a pretty basic model. When we do a <code>mode.summary()</code> on it, we get:</p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>_________________________________________________________________
+</span><span style="color:#bf616a;">Layer </span><span>(</span><span style="color:#96b5b4;">type</span><span>)                Output Shape              Param </span><span style="color:#65737e;">#   
+</span><span>=================================================================
+</span><span style="color:#bf616a;">embedding_1 </span><span>(Embedding)     (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">120</span><span>, </span><span style="color:#d08770;">16</span><span>)           </span><span style="color:#d08770;">19200     
+</span><span>                                                                
+</span><span style="color:#bf616a;">global_average_pooling1d_1   </span><span>(</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">16</span><span>)               </span><span style="color:#d08770;">0         
+</span><span>(GlobalAveragePooling1D)                                        
+</span><span>                                                                
+</span><span style="color:#bf616a;">dense_2 </span><span>(Dense)             (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">24</span><span>)                </span><span style="color:#d08770;">408       
+</span><span>                                                                
+</span><span style="color:#bf616a;">dense_3 </span><span>(Dense)             (</span><span style="color:#d08770;">None</span><span>, </span><span style="color:#d08770;">6</span><span>)                 </span><span style="color:#d08770;">150       
+</span><span>                                                                
+</span><span>=================================================================
+</span><span>Total params: </span><span style="color:#d08770;">19</span><span>,</span><span style="color:#d08770;">758
+</span><span>Trainable params: </span><span style="color:#d08770;">19</span><span>,</span><span style="color:#d08770;">758
+</span><span>Non-trainable params: </span><span style="color:#d08770;">0
+</span><span>_________________________________________________________________
+</span></code></pre>
+<hr />
+<p><img src="/me/images/trec/run_01/run_01.png#md-img" alt="png" /></p>
+<hr />
+
+
+    </div>
+  </section>
+</body>
+
+</html>

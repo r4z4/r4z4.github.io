@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Topic Modeling on Surface Trivia Question Dataset | Run 2 - Latent Dirichlet Allocation
+</h1>
+<p class="subtitle"><strong>2023-04-09</strong></p>
+<hr />
+<p>I wanted to go back and try a more traditional approach to the problem to have a comparison point for our transformers run. LDA is a tried
+and true method for topic modeling, but as we will see, it requires a lot more effort than our previous example.</p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>pandas </span><span style="color:#b48ead;">as </span><span>pd
+</span><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span style="color:#b48ead;">import </span><span>json
+</span><span style="color:#b48ead;">import </span><span>re
+</span><span style="color:#b48ead;">import </span><span>gensim
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df = pd.</span><span style="color:#bf616a;">read_json</span><span>(&quot;</span><span style="color:#a3be8c;">trivia_data.json</span><span>&quot;)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">## Gonna take a while to embed all the data (&gt; 2hrs on CPU). Lets just use 20% of the data
+</span><span style="color:#65737e;"># n = 20
+</span><span style="color:#65737e;"># df = df.head(int(len(df)*(n/100)))
+</span><span>
+</span><span>data = df[&#39;</span><span style="color:#a3be8c;">corrected_question</span><span>&#39;]
+</span><span>data_array = np.</span><span style="color:#bf616a;">array</span><span>([e </span><span style="color:#b48ead;">for </span><span>e </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">corrected_question</span><span>&#39;]])
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>gensim
+</span><span style="color:#b48ead;">from </span><span>gensim.utils </span><span style="color:#b48ead;">import </span><span>simple_preprocess
+</span><span style="color:#b48ead;">import </span><span>nltk
+</span><span>nltk.</span><span style="color:#bf616a;">download</span><span>(&#39;</span><span style="color:#a3be8c;">stopwords</span><span>&#39;)
+</span><span style="color:#b48ead;">from </span><span>nltk.corpus </span><span style="color:#b48ead;">import </span><span>stopwords
+</span><span>stop_words = stopwords.</span><span style="color:#bf616a;">words</span><span>(&#39;</span><span style="color:#a3be8c;">english</span><span>&#39;)
+</span><span>stop_words.</span><span style="color:#bf616a;">extend</span><span>([&#39;</span><span style="color:#a3be8c;">from</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">subject</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">re</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">edu</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">use</span><span>&#39;])
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">sent_to_words</span><span>(</span><span style="color:#bf616a;">sentences</span><span>):
+</span><span>    </span><span style="color:#b48ead;">for </span><span>sentence </span><span style="color:#b48ead;">in </span><span>sentences:
+</span><span>        </span><span style="color:#65737e;"># deacc=True removes punctuations
+</span><span>        </span><span style="color:#b48ead;">yield</span><span>(gensim.utils.</span><span style="color:#bf616a;">simple_preprocess</span><span>(</span><span style="color:#bf616a;">str</span><span>(sentence), </span><span style="color:#bf616a;">deacc</span><span>=</span><span style="color:#d08770;">True</span><span>))
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">remove_stopwords</span><span>(</span><span style="color:#bf616a;">texts</span><span>):
+</span><span>    </span><span style="color:#b48ead;">return </span><span>[[word </span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span style="color:#bf616a;">simple_preprocess</span><span>(</span><span style="color:#bf616a;">str</span><span>(doc)) 
+</span><span>             </span><span style="color:#b48ead;">if </span><span>word not in stop_words] </span><span style="color:#b48ead;">for </span><span>doc </span><span style="color:#b48ead;">in </span><span>texts]
+</span><span>
+</span><span>data_words = </span><span style="color:#bf616a;">list</span><span>(</span><span style="color:#bf616a;">sent_to_words</span><span>(data_array))
+</span><span style="color:#65737e;"># remove stop words
+</span><span>data_words = </span><span style="color:#bf616a;">remove_stopwords</span><span>(data_words)
+</span><span style="color:#96b5b4;">print</span><span>(data_words[:</span><span style="color:#d08770;">1</span><span>][</span><span style="color:#d08770;">0</span><span>][:</span><span style="color:#d08770;">30</span><span>])
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[nltk_data] Downloading package stopwords to /root/nltk_data...
+</span><span>[nltk_data]   Package stopwords is already up-to-date!
+</span><span>
+</span><span>
+</span><span>[&#39;many&#39;, &#39;movies&#39;, &#39;stanley&#39;, &#39;kubrick&#39;, &#39;direct&#39;]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>gensim.corpora </span><span style="color:#b48ead;">as </span><span>corpora
+</span><span style="color:#65737e;"># Create Dictionary
+</span><span>id2word = corpora.</span><span style="color:#bf616a;">Dictionary</span><span>(data_words)
+</span><span style="color:#65737e;"># Create Corpus
+</span><span>texts = data_words
+</span><span style="color:#65737e;"># Term Document Frequency
+</span><span>corpus = [id2word.</span><span style="color:#bf616a;">doc2bow</span><span>(text) </span><span style="color:#b48ead;">for </span><span>text </span><span style="color:#b48ead;">in </span><span>texts]
+</span><span style="color:#65737e;"># View
+</span><span style="color:#96b5b4;">print</span><span>(corpus[:</span><span style="color:#d08770;">1</span><span>][</span><span style="color:#d08770;">0</span><span>][:</span><span style="color:#d08770;">30</span><span>])
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[(0, 1), (1, 1), (2, 1), (3, 1), (4, 1)]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>pprint </span><span style="color:#b48ead;">import </span><span>pprint
+</span><span style="color:#65737e;"># number of topics
+</span><span>num_topics = </span><span style="color:#d08770;">10
+</span><span style="color:#65737e;"># Build LDA model
+</span><span>lda_model = gensim.models.</span><span style="color:#bf616a;">LdaMulticore</span><span>(</span><span style="color:#bf616a;">corpus</span><span>=corpus,
+</span><span>                                       </span><span style="color:#bf616a;">id2word</span><span>=id2word,
+</span><span>                                       </span><span style="color:#bf616a;">num_topics</span><span>=num_topics)
+</span><span style="color:#65737e;"># Print the Keyword in the 10 topics
+</span><span style="color:#bf616a;">pprint</span><span>(lda_model.</span><span style="color:#bf616a;">print_topics</span><span>())
+</span><span>doc_lda = lda_model[corpus]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[(0,
+</span><span>  &#39;0.017*&quot;many&quot; + 0.010*&quot;name&quot; + 0.009*&quot;whose&quot; + 0.007*&quot;list&quot; + &#39;
+</span><span>  &#39;0.006*&quot;different&quot; + 0.006*&quot;school&quot; + 0.006*&quot;river&quot; + 0.005*&quot;also&quot; + &#39;
+</span><span>  &#39;0.005*&quot;common&quot; + 0.005*&quot;awards&quot;&#39;),
+</span><span> (1,
+</span><span>  &#39;0.018*&quot;name&quot; + 0.015*&quot;whose&quot; + 0.011*&quot;many&quot; + 0.011*&quot;played&quot; + 0.009*&quot;also&quot; &#39;
+</span><span>  &#39;+ 0.009*&quot;team&quot; + 0.008*&quot;founded&quot; + 0.007*&quot;city&quot; + 0.007*&quot;sports&quot; + &#39;
+</span><span>  &#39;0.005*&quot;place&quot;&#39;),
+</span><span> (2,
+</span><span>  &#39;0.027*&quot;name&quot; + 0.018*&quot;many&quot; + 0.015*&quot;whose&quot; + 0.013*&quot;people&quot; + 0.010*&quot;also&quot; &#39;
+</span><span>  &#39;+ 0.007*&quot;one&quot; + 0.007*&quot;person&quot; + 0.007*&quot;play&quot; + 0.006*&quot;city&quot; + &#39;
+</span><span>  &#39;0.005*&quot;company&quot;&#39;),
+</span><span> (3,
+</span><span>  &#39;0.017*&quot;whose&quot; + 0.013*&quot;many&quot; + 0.011*&quot;team&quot; + 0.009*&quot;people&quot; + &#39;
+</span><span>  &#39;0.008*&quot;football&quot; + 0.007*&quot;also&quot; + 0.007*&quot;school&quot; + 0.006*&quot;list&quot; + &#39;
+</span><span>  &#39;0.006*&quot;place&quot; + 0.006*&quot;american&quot;&#39;),
+</span><span> (4,
+</span><span>  &#39;0.019*&quot;show&quot; + 0.016*&quot;television&quot; + 0.015*&quot;whose&quot; + 0.012*&quot;name&quot; + &#39;
+</span><span>  &#39;0.008*&quot;list&quot; + 0.006*&quot;river&quot; + 0.006*&quot;many&quot; + 0.006*&quot;theme&quot; + 0.005*&quot;work&quot; &#39;
+</span><span>  &#39;+ 0.005*&quot;military&quot;&#39;),
+</span><span> (5,
+</span><span>  &#39;0.016*&quot;also&quot; + 0.015*&quot;list&quot; + 0.009*&quot;team&quot; + 0.008*&quot;whose&quot; + 0.008*&quot;many&quot; + &#39;
+</span><span>  &#39;0.006*&quot;city&quot; + 0.006*&quot;people&quot; + 0.006*&quot;country&quot; + 0.006*&quot;teams&quot; + &#39;
+</span><span>  &#39;0.005*&quot;place&quot;&#39;),
+</span><span> (6,
+</span><span>  &#39;0.020*&quot;many&quot; + 0.016*&quot;whose&quot; + 0.013*&quot;list&quot; + 0.009*&quot;also&quot; + 0.008*&quot;count&quot; &#39;
+</span><span>  &#39;+ 0.008*&quot;name&quot; + 0.007*&quot;company&quot; + 0.006*&quot;river&quot; + 0.005*&quot;one&quot; + &#39;
+</span><span>  &#39;0.005*&quot;awards&quot;&#39;),
+</span><span> (7,
+</span><span>  &#39;0.023*&quot;name&quot; + 0.014*&quot;whose&quot; + 0.011*&quot;also&quot; + 0.009*&quot;many&quot; + 0.009*&quot;city&quot; + &#39;
+</span><span>  &#39;0.009*&quot;located&quot; + 0.008*&quot;team&quot; + 0.006*&quot;river&quot; + 0.005*&quot;state&quot; + &#39;
+</span><span>  &#39;0.005*&quot;country&quot;&#39;),
+</span><span> (8,
+</span><span>  &#39;0.030*&quot;whose&quot; + 0.015*&quot;company&quot; + 0.013*&quot;list&quot; + 0.011*&quot;people&quot; + &#39;
+</span><span>  &#39;0.009*&quot;shows&quot; + 0.009*&quot;many&quot; + 0.008*&quot;name&quot; + 0.007*&quot;music&quot; + 0.007*&quot;team&quot; &#39;
+</span><span>  &#39;+ 0.006*&quot;count&quot;&#39;),
+</span><span> (9,
+</span><span>  &#39;0.023*&quot;whose&quot; + 0.016*&quot;name&quot; + 0.011*&quot;one&quot; + 0.010*&quot;list&quot; + 0.009*&quot;also&quot; + &#39;
+</span><span>  &#39;0.009*&quot;people&quot; + 0.009*&quot;place&quot; + 0.007*&quot;many&quot; + 0.007*&quot;office&quot; + &#39;
+</span><span>  &#39;0.006*&quot;work&quot;&#39;)]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>pyLDAvis.gensim
+</span><span style="color:#b48ead;">import </span><span>os
+</span><span style="color:#b48ead;">import </span><span>pickle 
+</span><span style="color:#b48ead;">import </span><span>pyLDAvis
+</span><span style="color:#65737e;"># Visualize the topics
+</span><span>pyLDAvis.</span><span style="color:#bf616a;">enable_notebook</span><span>()
+</span><span>os.</span><span style="color:#bf616a;">makedirs</span><span>(&#39;</span><span style="color:#a3be8c;">./results</span><span>&#39;, </span><span style="color:#bf616a;">exist_ok</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span><span>LDAvis_data_filepath = os.path.</span><span style="color:#bf616a;">join</span><span>(&#39;</span><span style="color:#a3be8c;">./results/ldavis_prepared_</span><span>&#39;+</span><span style="color:#bf616a;">str</span><span>(num_topics))
+</span><span style="color:#65737e;"># # this is a bit time consuming - make the if statement True
+</span><span style="color:#65737e;"># # if you want to execute visualization prep yourself
+</span><span style="color:#b48ead;">if </span><span style="color:#d08770;">1 </span><span>== </span><span style="color:#d08770;">1</span><span>:
+</span><span>    LDAvis_prepared = pyLDAvis.gensim.</span><span style="color:#bf616a;">prepare</span><span>(lda_model, corpus, id2word)
+</span><span>    </span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(LDAvis_data_filepath, &#39;</span><span style="color:#a3be8c;">wb</span><span>&#39;) </span><span style="color:#b48ead;">as </span><span>f:
+</span><span>        pickle.</span><span style="color:#bf616a;">dump</span><span>(LDAvis_prepared, f)
+</span><span style="color:#65737e;"># load the pre-prepared pyLDAvis data from disk
+</span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(LDAvis_data_filepath, &#39;</span><span style="color:#a3be8c;">rb</span><span>&#39;) </span><span style="color:#b48ead;">as </span><span>f:
+</span><span>    LDAvis_prepared = pickle.</span><span style="color:#bf616a;">load</span><span>(f)
+</span><span>pyLDAvis.</span><span style="color:#bf616a;">save_html</span><span>(LDAvis_prepared, &#39;</span><span style="color:#a3be8c;">./results/ldavis_prepared_</span><span>&#39;+ </span><span style="color:#bf616a;">str</span><span>(num_topics) +&#39;</span><span style="color:#a3be8c;">.html</span><span>&#39;)
+</span><span>LDAvis_prepared
+</span></code></pre>
+<p><img src="/assets/images/topic-modeling/02_LDA.png#img-thumbnail" alt="png" /></p>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

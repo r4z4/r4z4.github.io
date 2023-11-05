@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Introduction to using aider - LLM pair programming tool
+</h1>
+<p class="subtitle"><strong>2023-11-01</strong></p>
+<hr />
+<p>Despite all of the hype of chat bots out there I had yet to really find any real need for one, while also fully knowing that is has the ability to provide some pretty good code generation. I guess it was only a matter of time before a tool like aider came along. This was really the first tool that seemed to be more on the side of fully integrated with a current workflow. Simply put, it creates git commits. That might seem small but it does provide a pretty essential piece to the puzzle. To get started with aider you just need to head over to the <a href="https://aider.chat/">aider site</a> and follow the directions. It a simple pip command and just ensuring you have an Open AI API key to use and also that git is installed.</p>
+<hr />
+<p>The goal here is to just get off the ground. To see what types of commands and help we can get from it. So I created an empty cargo project and began by asking it to start generating some server files.</p>
+<p>One thing that is quite obvious from the little experiments that I've done so far with it, though, is that it'll take time. My first attempt at creating a file was met with a good ten minutes of pure confusion as where the changes where and why it was not working for this one feature. Searches of “aider not creating file” etc caused more confusion. Well, turn out you just need to always be explicit with the file paths. Completely obvious and  I was slightly embarrassed for myself, until I realized that this is just one tiny instance of a much larger pattern – just needing to adapt to this new workflow and get used to the tools.</p>
+<p>If tools like aider truly are going to be a new version of pair programmers, and at this point it would be hard to argue that they will not, in some form or fashion, be relevant moving forward – then it will take lots of iterations and building up some new muscle memories (in the brain and body) to really remember how best to use them and get the most out of them.</p>
+<p>One of main reasons I actually wanted to do this little run though is to see what kinds of costs I was getting. Before I go all in and start actually using this thing, to the point where I might lost track of any costs or usage statistics, I just wanted a baseline understanding of what the prompt → token → cost calculations might look like.</p>
+<p>Here is our starting point after the first command (plus one or test commands from yesterday).</p>
+<p><img src="/me/images/llms/aider_cost_1.png#md-img" alt="png" /></p>
+<hr />
+<h2 id="creating-the-templates">Creating the templates</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>    </span><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
+</span><span>    &gt; Create </span><span style="color:#bf616a;">a</span><span> directory in the root directory titled templated (./templates) </span><span style="color:#bf616a;">and</span><span> inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
+</span><span>    </span><span style="color:#bf616a;">Inside</span><span> of the ./templates/homepage.hbs file, create a basic handlebars layout file with a basic HTML page.
+</span><span>
+</span><span>    </span><span style="color:#bf616a;">To</span><span> create the ./templates/homepage.hbs file with a basic handlebars layout, you can use the following content:
+</span><span>
+</span><span>    </span><span style="color:#bf616a;">./templates/homepage.hbs
+</span><span>
+</span><span>    &lt;!DOCTYPE </span><span style="color:#bf616a;">html</span><span>&gt;
+</span><span>    &lt;html&gt;
+</span><span>    &lt;head&gt;
+</span><span>        &lt;title&gt;Handlebars </span><span style="color:#bf616a;">Template</span><span>&lt;/title&gt;
+</span><span>    &lt;/head&gt;
+</span><span>    &lt;body&gt;
+</span><span>        &lt;h1&gt;Welcome </span><span style="color:#bf616a;">to</span><span> Handlebars Template!&lt;/h1&gt;
+</span><span>        </span><span style="color:#bf616a;">{{{body</span><span>}}}
+</span><span>    &lt;/body&gt;
+</span><span>    &lt;/html&gt;
+</span><span>
+</span><span>    </span><span style="color:#bf616a;">Please</span><span> make sure to create the ./templates directory in the root directory and place the homepage.hbs file inside it.
+</span><span>
+</span><span>    </span><span style="color:#bf616a;">Allow</span><span> creation of new file ./templates/homepage.hbs? y
+</span><span>    </span><span style="color:#bf616a;">Applied</span><span> edit to ./templates/homepage.hbs
+</span></code></pre>
+<p>It did freeze after that which was a little disheartening but file was created. It is also added to the chat history as well. (which if you don’t need, you can remove with <code>/drop &lt;filepath&gt;</code></p>
+<p>One useful tip from the site in this regards though is:</p>
+<blockquote>
+<p>Use Control-C to safely interrupt GPT if it isn’t providing a useful response. The partial response remains in the conversation, so you can refer to it when you reply to GPT with more information or direction.</p>
+</blockquote>
+<p>It does seem to be the one place there is a real lack of progress or status alerts, though, which is great. Here is a screenshot of the CLI as it is &quot;pair programming&quot;:
+<img src="/me/images/llms/aider_screen.png#md-img" alt="png" /></p>
+<hr />
+<h2 id="getting-a-review">Getting a Review</h2>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
+</span><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
+</span><span>&gt; Please </span><span style="color:#bf616a;">review</span><span> lines between the comments Begin review and End review in the file `</span><span style="color:#bf616a;">src/config.rs</span><span>` and make changes to t
+</span><span style="color:#bf616a;">hem</span><span> to correct.
+</span><span>
+</span><span style="color:#bf616a;">Got</span><span> it! I will review the lines between the comments &quot;</span><span style="color:#a3be8c;">Begin review</span><span>&quot; and &quot;</span><span style="color:#a3be8c;">End review</span><span>&quot; in the src/config.rs file and make
+</span><span style="color:#bf616a;">any</span><span> necessary changes.
+</span></code></pre>
+<p>This similarly produced zero response:</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
+</span><span>&gt; I </span><span style="color:#bf616a;">have</span><span> added some of my own lines to the src/config.rs file for some regular expression constants and also some structs that will be heavily used. Please review them and see if I made any mistakes. 
+</span><span style="color:#bf616a;">If</span><span> you find something that seems wrong, please let me know and change it in the file, otherwise please respond with &quot;</span><span style="color:#a3be8c;">all good</span><span>&quot;. My lines are in between the comments that read Being review and End review.
+</span><span>
+</span><span style="color:#bf616a;">Understood.</span><span> Let me review the changes you made to the src/config.rs file and provide feedback on any potential mistakes.
+</span></code></pre>
+<p>At one point I received this as a response:</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">Got</span><span> it! Please provide the updated content of the src/config.rs file including your changes.
+</span></code></pre>
+<p>So, in the end and at least for now, it seems the easiest way to simply get a review of your file or have it clean it up is to simply prompt it with a file name that is in the chat history.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
+</span><span>&gt; `</span><span style="color:#bf616a;">src/config.rs</span><span>`
+</span><span>
+</span><span style="color:#bf616a;">Committing</span><span> src/config.rs before applying edits.
+</span><span style="color:#bf616a;">Commit</span><span> 27c60f7 Refactor Post struct in config.rs to remove author field.
+</span><span style="color:#bf616a;">Applied</span><span> edit to src/config.rs
+</span><span style="color:#bf616a;">Commit</span><span> 5528bce aider: Refactor Post struct fields to have proper syntax.
+</span></code></pre>
+<hr />
+<p>There were also times when it seemed to think that it made some changes but in reality it just seemed to rewrite what it had.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs templates/homepage.hbs
+</span><span>&gt; Alter `</span><span style="color:#bf616a;">templates/homepage.hbs</span><span>` so that it is a layout file in the handlebars template engine system. I believe that the syntax is similar to {{&gt; layout }} then closes with a {{/layout }} tag.
+</span><span>
+</span><span style="color:#bf616a;">Here</span><span> is the updated content of the templates/homepage.hbs file:
+</span><span>
+</span><span style="color:#bf616a;">templates/homepage.hbs
+</span><span>
+</span><span style="color:#bf616a;">I</span><span> have added a basic HTML layout to the homepage.hbs file. The {{{body}}} placeholder is where the content of each page
+</span><span style="color:#bf616a;">will</span><span> be inserted when rendering the template.
+</span><span>
+</span><span style="color:#bf616a;">Applied</span><span> edit to templates/homepage.hbs
+</span><span style="color:#bf616a;">No</span><span> changes made to git tracked files.
+</span></code></pre>
+<hr />
+<h2 id="real-test">Real Test</h2>
+<p>Alright a real test now. See how well it adds a handlebars_helper file, adds a specific handler to that file, then adds the linkage that it needs in the main.rs file to be able to be used.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs templates/homepage.hbs
+</span><span>&gt; Create </span><span style="color:#bf616a;">a</span><span> new file at `</span><span style="color:#bf616a;">src/handlebars_helpers.rs</span><span>` that will hold all of our Rust helper functions for the handlebars template pages. Inside of that file, import the handlebard_helper macro from the handlebars crate and use it to create a helper function titled to_title_case()</span><span style="color:#96b5b4;">.</span><span> That function should take a String and simple capitalize the first letter of that string. Then in the `</span><span style="color:#bf616a;">src/main.rs</span><span>` file, register that helper funtion with the handlebars setup.
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">Here</span><span> are the updated files:
+</span><span>
+</span><span style="color:#bf616a;">src/handlebars_helpers.rs
+</span><span>
+</span><span> </span><span style="color:#bf616a;">//</span><span> handlebars_helpers.rs
+</span><span> </span><span style="color:#bf616a;">use</span><span> handlebars::handlebars_helper;
+</span><span>
+</span><span> </span><span style="color:#bf616a;">handlebars_helper!</span><span>(to_title_case: |</span><span style="color:#bf616a;">s:</span><span> str| </span><span style="color:#8fa1b3;">s.to_title_case</span><span>());
+</span><span>
+</span><span>src/main.rs
+</span><span>
+</span><span> @@ -1,10 +1,12 @@
+</span><span>  use actix_web::{</span><span style="color:#bf616a;">web,</span><span> App, HttpResponse, HttpServer};
+</span><span>  </span><span style="color:#bf616a;">use</span><span> handlebars::Handlebars;
+</span><span>  </span><span style="color:#bf616a;">use</span><span> crate::config::authorize_user;
+</span><span> </span><span style="color:#bf616a;">+use</span><span> crate::handlebars_helpers::to_title_case;
+</span><span>
+</span><span>  </span><span style="color:#bf616a;">mod</span><span> config;
+</span><span> </span><span style="color:#bf616a;">+mod</span><span> handlebars_helpers;
+</span><span>
+</span><span>  </span><span style="color:#bf616a;">struct</span><span> AppData {
+</span><span>      // Define your struct fields here
+</span><span>  }
+</span><span>
+</span><span> </span><span style="color:#bf616a;">@@ -28</span><span>,10 +30,13 @@
+</span><span>
+</span><span>      </span><span style="color:#bf616a;">//</span><span> Initialize Handlebars and register the template directory
+</span><span>      </span><span style="color:#96b5b4;">let</span><span> mut hb = Handlebars::new();
+</span><span>      </span><span style="color:#bf616a;">hb.register_templates_directory</span><span>(&quot;</span><span style="color:#a3be8c;">.hbs</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">./templates</span><span>&quot;)
+</span><span>          </span><span style="color:#8fa1b3;">.unwrap</span><span>();
+</span><span> +
+</span><span> +    // Register the handlebars helper function
+</span><span> +    hb.register_helper(&quot;</span><span style="color:#a3be8c;">to_title_case</span><span>&quot;</span><span style="color:#bf616a;">,</span><span> Box::new(to_title_case));
+</span><span>
+</span><span>      </span><span style="color:#bf616a;">//</span><span> Start the HTTP server
+</span><span>      </span><span style="color:#bf616a;">HttpServer::new</span><span>(move || {
+</span><span>          </span><span style="color:#8fa1b3;">App::new</span><span>()
+</span><span>              .app_data(</span><span style="color:#8fa1b3;">app_data.clone</span><span>())
+</span><span>
+</span><span>
+</span><span>Please note that I have created a new file src/handlebars_helpers.rs and added the to_title_case helper function. In the
+</span><span>src/main.rs file, I have imported the handlebars_helpers module and registered the to_title_case helper function with
+</span><span>the Handlebars instance.
+</span><span>
+</span><span>Allow creation of new file src/handlebars_helpers.rs? y
+</span><span>Applied edit to src/main.rs
+</span><span>Applied edit to src/handlebars_helpers.rs
+</span><span>Commit 1c4fd42 aider: Create handlebars_helpers.rs file and register the to_title_case helper function in main.rs.
+</span></code></pre>
+<hr />
+<p>Now it seems like we are off an running. Let's keep going,</p>
+<hr />
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">src/config.rs</span><span> src/handlebars_helpers.rs src/main.rs templates/homepage.hbs
+</span><span>&gt; Add </span><span style="color:#bf616a;">the</span><span> handlebars crate and the serde crate to the `</span><span style="color:#bf616a;">Cargo.toml</span><span>` file so that we can use the imports.
+</span><span>
+</span><span style="color:#bf616a;">Cargo.toml
+</span><span style="color:#bf616a;">Add</span><span> these files to the chat? y
+</span><span style="color:#bf616a;">Cargo.toml
+</span><span>
+</span><span>
+</span><span> </span><span style="color:#bf616a;">@@ -4</span><span>,5 +4,7 @@
+</span><span>  </span><span style="color:#bf616a;">edition</span><span> = &quot;</span><span style="color:#a3be8c;">2021</span><span>&quot;
+</span><span>
+</span><span>  </span><span style="color:#65737e;"># See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+</span><span>
+</span><span>  </span><span style="color:#bf616a;">[dependencies]
+</span><span> </span><span style="color:#bf616a;">+handlebars</span><span> = &quot;</span><span style="color:#a3be8c;">4.5.3</span><span>&quot;
+</span><span> </span><span style="color:#bf616a;">+serde</span><span> = { version = &quot;</span><span style="color:#a3be8c;">1.0</span><span>&quot;, features = </span><span style="color:#b48ead;">[</span><span>&quot;</span><span style="color:#a3be8c;">derive</span><span>&quot;</span><span style="color:#b48ead;">] </span><span>}
+</span><span>
+</span><span>
+</span><span style="color:#bf616a;">Applied</span><span> edit to Cargo.toml
+</span><span style="color:#bf616a;">Commit</span><span> e76bb8e aider: Add the handlebars crate and the serde crate to the `</span><span style="color:#bf616a;">Cargo.toml</span><span>` file.
+</span></code></pre>
+<hr />
+<p>Of course this thing won’t compile and everything is red. Although … much of that is due to just not having done the <code>cargo add</code> commands yet for the crates. Can it do that? Of course it can.</p>
+<p>But … it did get the handlebars crate wrong which caused a rust-analyzer issue. But, as we know, rust-analyzer is pretty great too so it just told me what to do. Just change 4.5.3 to 4.2.1</p>
+<p>Not lets have it finish the job. Forgot to add actix crate to Cargo.toml, and then need to add import statements for the missing imports in both files.</p>
+<p>Gets those too but stops short of being able to just read everything and interpret it all and fix it. We still need to be more explicit to have it resolve some of the rust-analyzer issues (which is just a serde and handlebars import at this point). As it is now easier to just edit but who knows what will be the case in a month or two.</p>
+<hr />
+<h2 id="the-costs">The Costs</h2>
+<p>Here is our ending point after creating a few files and getting some reviews etc.. </p>
+<p><img src="/me/images/llms/aider_cost_2.png#md-img" alt="png" /></p>
+<hr />
+<p>I am betting this will only improve with time but another thing to note is the context window size. I attempted to feed it a rather large example file which ended up backfiring and I was greeted with the following error message. Also make sure to pay attention to the prompts and what files it is wanted to add to the chat. I was assuming it wanted to add main.rs (but that was already in the chat). Again, though, just the process of learning the ropes I suppose.</p>
+<p>Overall though, I am pretty impressed. I will be continuing to see how far I can get with aider without much of my own thought or assistance - like that would help anyways though :/.</p>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

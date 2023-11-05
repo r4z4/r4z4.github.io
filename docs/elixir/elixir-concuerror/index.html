@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Concurrency Testing w&#x2F; Concuerror
+</h1>
+<p class="subtitle"><strong>2023-08-07</strong></p>
+<hr />
+<p><img src="/me/images/elixir/Concuerror.png#md-img-bright" alt="png" /></p>
+<hr />
+<p>Continuing with the theme of just being different, for better or worse, Erlang also gives us a good opportunity to explore two other, more obscure in my experience, methods of testing in Property Based Testing and also Concurrency Testing. I had no prior experience with either and they were both rather interesting to look into.</p>
+<hr />
+<p>Property Based testing really originated with Haskell and the QuickCheck implementation and seems that most other implementations in other languages, including Erlang, just follow this approach. The difficulty that I have had here is just finding what I would need to test in this manner. It is just a little different way of thinking about the testing so it does not fit well for all cases.</p>
+<hr />
+<p>Concurrency testing was also completely new to me, but I certainly understood the need and importance of this. But unlike property based testing, it was the actual implementation and internals of how it works that evaded me. 
+I fully intended this to kind of be a one off and just to try it, but I actually think it might offer quite a but as I go and add more features to the system. If you think about it, the whole reason to choose to use this whole ecosystem is for the concurrency offerings so this is just another one of those tools that can help. It is just a matter of getting used to it and learning the new terms etc.</p>
+<hr />
+<p>On that note, the <a href="https://www.concuerror.com">Concuerror</a> site does have some pretty good tutorials which are helpful to walk through some of the initial stages. Here they describe a few of the terms and values to look out for in a typical report:</p>
+<hr />
+<hr />
+<p>We need to set up our environment before we can use the tool though, of course. I have not had great experiences using some of the Erlang tooling, but I was actually pleasently surprised here and found the process a little more tolerable, which was nice. Even with that said, though, there is still some configuration to do. First, need to make sure the right files get compiled. Concuerror does not work with .exs files, so we need to make sure that we only compile the tests that we need and that we
+can avoid the extentions. That is done by altering the mix.exs configuration file to read:</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">project </span><span style="color:#b48ead;">do
+</span><span>    [
+</span><span style="color:#65737e;">      # ...
+</span><span>      </span><span style="color:#d08770;">elixirc_paths:</span><span> elixirc_paths(</span><span style="color:#ebcb8b;">Mix</span><span>.env),
+</span><span>      </span><span style="color:#d08770;">test_pattern: </span><span>&quot;</span><span style="color:#a3be8c;">*_test.ex*</span><span>&quot;,
+</span><span>      </span><span style="color:#d08770;">warn_test_pattern: nil
+</span><span>    ]
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">defp </span><span style="color:#8fa1b3;">elixirc_paths</span><span>(</span><span style="color:#a3be8c;">:test</span><span>), </span><span style="color:#d08770;">do: </span><span>[&quot;</span><span style="color:#a3be8c;">lib</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">test/concuerror</span><span>&quot;]
+</span><span>  </span><span style="color:#b48ead;">defp </span><span style="color:#8fa1b3;">elixirc_paths</span><span>(_), </span><span style="color:#d08770;">do: </span><span>[&quot;</span><span style="color:#a3be8c;">lib</span><span>&quot;]
+</span></code></pre>
+<p>It is also worth noting that if you will want to have the images for easy viewing, it helps to install graphviz, which will enable you to use the <code>dot</code> command, which we will use like this after we run out test and it generates the .dot file for us, which we will the convert to a .png image.</p>
+<pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>dot -Tpng my_graph.dot &gt; my_graph.png
+</span></code></pre>
+<p>Now our images are availalbe. But of course we are still early in our testing and still getting failures. I'll just use one of the images but trust me I had many of these. After some trial and error runs and then finally giving up and reading some documentation, turns out there are a few little intricacies that we need to account for first. Here is the fhat first failing image.</p>
+<hr />
+<p><img src="/me/images/elixir/subscription_graph.png#md-img" alt="png" /></p>
+<hr />
+<p>This is a version of the first concurrency test I was running, with only one interleaving, but even so I was running into some issues, all seeming to do with just making sure that we have our <code>handle_cast</code> or <code>handle_info</code> callbacks properly set up in our module.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">defmodule </span><span style="color:#ebcb8b;">FanCan</span><span>.</span><span style="color:#ebcb8b;">ConcurrencyTest </span><span style="color:#b48ead;">do
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">push</span><span>(pid, n) </span><span style="color:#b48ead;">do
+</span><span>      </span><span style="color:#ebcb8b;">GenServer</span><span>.cast(pid, {</span><span style="color:#a3be8c;">:new_message</span><span>, n})
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#65737e;">@doc &quot;&quot;&quot;
+</span><span style="color:#65737e;">  For now this is just a simple test. Need to perform some actions
+</span><span style="color:#65737e;">  with the elements and continue to test
+</span><span style="color:#65737e;">  &quot;&quot;&quot;
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">test </span><span style="color:#b48ead;">do
+</span><span style="color:#65737e;">    # {:ok, pid} = GenServer.start_link(FanCanWeb.ThreadLive.Index, [])
+</span><span>    {</span><span style="color:#a3be8c;">:ok</span><span>, pid} = </span><span style="color:#ebcb8b;">GenServer</span><span>.start_link(</span><span style="color:#ebcb8b;">FanCanWeb</span><span>.</span><span style="color:#ebcb8b;">SubscriptionServer</span><span>, [])
+</span><span>
+</span><span>    [&quot;</span><span style="color:#a3be8c;">a</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">b</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">c</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">d</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">e</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">f</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">g</span><span>&quot;] |&gt; </span><span style="color:#ebcb8b;">Enum</span><span>.each(</span><span style="color:#b48ead;">fn</span><span> ltr -&gt; push(pid, ltr) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>
+</span><span>    [&quot;</span><span style="color:#a3be8c;">h</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">i</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">j</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">k</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">l</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">m</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">n</span><span>&quot;] |&gt; </span><span style="color:#ebcb8b;">Enum</span><span>.each(</span><span style="color:#b48ead;">fn</span><span> ltr -&gt; push(pid, ltr) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>
+</span><span>    [&quot;</span><span style="color:#a3be8c;">o</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">p</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">q</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">r</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">s</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">t</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">u</span><span>&quot;] |&gt; </span><span style="color:#ebcb8b;">Enum</span><span>.each(</span><span style="color:#b48ead;">fn</span><span> ltr -&gt; push(pid, ltr) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>
+</span><span>    [&quot;</span><span style="color:#a3be8c;">u</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">v</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">w</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">x</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">y</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">z</span><span>&quot;,&quot;</span><span style="color:#a3be8c;">!</span><span>&quot;] |&gt; </span><span style="color:#ebcb8b;">Enum</span><span>.each(</span><span style="color:#b48ead;">fn</span><span> ltr -&gt; push(pid, ltr) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>
+</span><span style="color:#65737e;">    # This is necessary. Even if there was no crash of the GenServer,
+</span><span style="color:#65737e;">    # not stopping it would make Concuerror believe that the process
+</span><span style="color:#65737e;">    # is stuck forever, as no new process can ever send it messages in
+</span><span style="color:#65737e;">    # this test.
+</span><span>    </span><span style="color:#ebcb8b;">GenServer</span><span>.stop(pid)
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>And now here is the SubscriptionServer module and the implementation of the GenServer callback methods.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">defmodule </span><span style="color:#ebcb8b;">FanCanWeb</span><span>.</span><span style="color:#ebcb8b;">SubscriptionServer </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#b48ead;">use </span><span style="color:#ebcb8b;">GenServer
+</span><span>  </span><span style="color:#b48ead;">alias </span><span style="color:#ebcb8b;">FanCan</span><span>.</span><span style="color:#ebcb8b;">Core</span><span>.</span><span style="color:#ebcb8b;">TopicHelpers
+</span><span>  </span><span style="color:#b48ead;">alias </span><span style="color:#ebcb8b;">FanCan</span><span>.</span><span style="color:#ebcb8b;">Accounts</span><span>.</span><span style="color:#ebcb8b;">UserFollows
+</span><span>  
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">start </span><span style="color:#b48ead;">do
+</span><span>    initial_state = []
+</span><span>    receive_messages(initial_state)
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">receive_messages</span><span>(state) </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#b48ead;">receive do
+</span><span>      msg -&gt;
+</span><span>        {</span><span style="color:#a3be8c;">:ok</span><span>, new_state} = handle_message(msg, state)
+</span><span>        receive_messages(new_state)
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_message</span><span>({</span><span style="color:#a3be8c;">:subscribe_user_follows</span><span>, user_follows}, state) </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#b48ead;">for</span><span> follow = %</span><span style="color:#ebcb8b;">UserFollows</span><span>{} &lt;- user_follows </span><span style="color:#b48ead;">do
+</span><span>      </span><span style="color:#ebcb8b;">IO</span><span>.inspect(follow, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Type</span><span>&quot;)
+</span><span style="color:#65737e;">      # Subscribe to user_follows. E.g. forums that user subscribes to
+</span><span>      </span><span style="color:#b48ead;">case</span><span> follow.type </span><span style="color:#b48ead;">do
+</span><span>        </span><span style="color:#a3be8c;">:candidate </span><span>-&gt; </span><span style="color:#ebcb8b;">TopicHelpers</span><span>.subscribe_to_followers(&quot;</span><span style="color:#a3be8c;">candidate</span><span>&quot;, follow.follow_ids)
+</span><span>        </span><span style="color:#a3be8c;">:user </span><span>-&gt; </span><span style="color:#ebcb8b;">TopicHelpers</span><span>.subscribe_to_followers(&quot;</span><span style="color:#a3be8c;">user</span><span>&quot;, follow.follow_ids)
+</span><span>        </span><span style="color:#a3be8c;">:forum </span><span>-&gt; </span><span style="color:#ebcb8b;">TopicHelpers</span><span>.subscribe_to_followers(&quot;</span><span style="color:#a3be8c;">forum</span><span>&quot;, follow.follow_ids)
+</span><span>        </span><span style="color:#a3be8c;">:election </span><span>-&gt; </span><span style="color:#ebcb8b;">TopicHelpers</span><span>.subscribe_to_followers(&quot;</span><span style="color:#a3be8c;">election</span><span>&quot;, follow.follow_ids)
+</span><span>      </span><span style="color:#b48ead;">end
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>    {</span><span style="color:#a3be8c;">:ok</span><span>, []}
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_message</span><span>({</span><span style="color:#a3be8c;">:subscribe_user_published</span><span>, current_user_published_ids}, state) </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#b48ead;">with</span><span> %{</span><span style="color:#d08770;">post_ids:</span><span> post_ids, </span><span style="color:#d08770;">thread_ids:</span><span> thread_ids} &lt;- current_user_published_ids </span><span style="color:#b48ead;">do
+</span><span>      </span><span style="color:#ebcb8b;">IO</span><span>.inspect(thread_ids, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">thread_ids_b</span><span>&quot;)
+</span><span>      </span><span style="color:#b48ead;">for</span><span> post_id &lt;- post_ids </span><span style="color:#b48ead;">do
+</span><span>        </span><span style="color:#ebcb8b;">FanCanWeb</span><span>.</span><span style="color:#ebcb8b;">Endpoint</span><span>.subscribe(&quot;</span><span style="color:#a3be8c;">posts_</span><span>&quot; &lt;&gt; post_id)
+</span><span>      </span><span style="color:#b48ead;">end
+</span><span>      </span><span style="color:#b48ead;">for</span><span> thread_id &lt;- thread_ids </span><span style="color:#b48ead;">do
+</span><span>        </span><span style="color:#ebcb8b;">FanCanWeb</span><span>.</span><span style="color:#ebcb8b;">Endpoint</span><span>.subscribe(&quot;</span><span style="color:#a3be8c;">threads_</span><span>&quot; &lt;&gt; thread_id)
+</span><span>      </span><span style="color:#b48ead;">end
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>    {</span><span style="color:#a3be8c;">:ok</span><span>, []}
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_info</span><span>(_) </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#ebcb8b;">IO</span><span>.puts &quot;</span><span style="color:#a3be8c;">Info Handler</span><span>&quot;
+</span><span>    {</span><span style="color:#a3be8c;">:ok</span><span>, []}
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span><span>  </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_cast</span><span>({</span><span style="color:#a3be8c;">:new_message</span><span>, element}, state) </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#ebcb8b;">IO</span><span>.inspect(state, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Concuerror - State var</span><span>&quot;)
+</span><span>    </span><span style="color:#ebcb8b;">IO</span><span>.inspect(element, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Concuerror - Element var</span><span>&quot;)
+</span><span>    </span><span style="color:#b48ead;">if </span><span style="color:#ebcb8b;">String</span><span>.contains?(element, &quot;</span><span style="color:#a3be8c;">b</span><span>&quot;) </span><span style="color:#b48ead;">do
+</span><span>      </span><span style="color:#ebcb8b;">String</span><span>.upcase(element)
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>    {</span><span style="color:#a3be8c;">:noreply</span><span>, [element | state]}
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>
+</span></code></pre>
+<p>Most of my errors centered around getting those arguments correct, which took some getting used to tracking them down in the Concuerror logs. Here are some examples from the logs that will give us some idea of what we can look for when things go wrong.</p>
+<hr />
+<p>There are also a few little steps which you might run into as well depending on how your system in configured. E.g I needed to update my path w/ <code>export PATH=/Concuerror/bin:$PATH</code> - which is where my instance of Concuerror was installed to. There were also some permissions to account for if you end up utilizing the above script in some fasion. These are pretty easily solved with a <code>chmod +x ./concuerror_test.sh</code> or similar.</p>
+<hr />
+<p>Here was the final command that I ended up needing to run in order to satisfy all the tests. The hints are there if you squint your eyes and look hard enough in the docs, but it ceratinly took me a little while to find out the different options needed.</p>
+<pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>  ./concuerror_test.sh FanCan.ConcurrencyTest --graph my_graph.dot --after_timeout 1000 --treat_as_normal shutdown
+</span></code></pre>
+<p>After all of that, though, we are finally able to get a running test and see some green.</p>
+<p><img src="/me/images/elixir/success_graph.png#md-img" alt="png" /></p>
+<p>Similarly, it is much nicer to look at the report of the successful test versus the one that is riddled with errors. Here is the complete .txt file that is generated.</p>
+<pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>Concuerror 0.21.0+build.2371.refaf91d78 started at 12 Jul 2023 17:58:22
+</span><span> Options:
+</span><span>  [{after_timeout,1000},
+</span><span>   {assertions_only,false},
+</span><span>   {assume_racing,true},
+</span><span>   {depth_bound,500},
+</span><span>   {disable_sleep_sets,false},
+</span><span>   {dpor,optimal},
+</span><span>   {entry_point,{&#39;Elixir.FanCan.ConcurrencyTest&#39;,test,[]}},
+</span><span>   {exclude_module,[]},
+</span><span>   {first_process_errors_only,false},
+</span><span>   {ignore_error,[]},
+</span><span>   {instant_delivery,true},
+</span><span>   {interleaving_bound,infinity},
+</span><span>   {keep_going,true},
+</span><span>   {log_all,false},
+</span><span>   {non_racing_system,[]},
+</span><span>   {pa,&quot;/usr/local/lib/elixir/lib/elixir/ebin&quot;},
+</span><span>   {pa,&quot;/usr/local/lib/elixir/lib/ex_unit/ebin&quot;},
+</span><span>   {pa,&quot;_build/test/lib/fan_can/ebin/&quot;},
+</span><span>   {print_depth,20},
+</span><span>   {scheduling,round_robin},
+</span><span>   {scheduling_bound_type,none},
+</span><span>   {show_races,false},
+</span><span>   {strict_scheduling,false},
+</span><span>   {symbolic_names,true},
+</span><span>   {timeout,5000},
+</span><span>   {treat_as_normal,[shutdown]},
+</span><span>   {use_receive_patterns,true}]
+</span><span>################################################################################
+</span><span>Exploration completed!
+</span><span>  No errors found!
+</span><span>################################################################################
+</span><span>Tips:
+</span><span>--------------------------------------------------------------------------------
+</span><span>* Check `--help attributes&#39; for info on how to pass options via module attributes.
+</span><span>* Running without a scheduling_bound corresponds to verification and may take a long time.
+</span><span>* Increase &#39;--print_depth&#39; if output/graph contains &quot;...&quot;.
+</span><span>* Your test sends messages to the &#39;user&#39; process to write output. Such messages from different processes may race, 
+</span><span>* producing spurious interleavings. Consider using &#39;--non_racing_system user&#39; to avoid them.
+</span><span>
+</span><span>################################################################################
+</span><span>Info:
+</span><span>--------------------------------------------------------------------------------
+</span><span>* Showing progress (&#39;-h progress&#39;, for details)
+</span><span>* Writing results in concuerror_report.txt
+</span><span>* Writing graph in my_graph.dot
+</span><span>* Only logging errors (&#39;--log_all false&#39;)
+</span><span>* Automatically instrumented module io_lib
+</span><span>* Showing PIDs as &quot;&lt;symbolic name(/last registered name)&gt;&quot; (&#39;-h symbolic_names&#39;).
+</span><span>* Automatically instrumented module error_handler
+</span><span>* Automatically instrumented module &#39;Elixir.FanCan.ConcurrencyTest&#39;
+</span><span>* Automatically instrumented module &#39;Elixir.GenServer&#39;
+</span><span>* Automatically instrumented module &#39;Elixir.Keyword&#39;
+</span><span>* Automatically instrumented module gen
+</span><span>* Automatically instrumented module proc_lib
+</span><span>* Automatically instrumented module gen_server
+</span><span>* Automatically instrumented module &#39;Elixir.FanCanWeb.SubscriptionServer&#39;
+</span><span>* Automatically instrumented module &#39;Elixir.Enum&#39;
+</span><span>* Automatically instrumented module lists
+</span><span>* Automatically instrumented module sys
+</span><span>* Automatically instrumented module &#39;Elixir.IO&#39;
+</span><span>* Automatically instrumented module io
+</span><span>
+</span><span>################################################################################
+</span><span>Done at 12 Jul 2023 17:58:26 (Exit status: ok)
+</span><span>  Summary: 0 errors, 1/1 interleavings explored
+</span></code></pre>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

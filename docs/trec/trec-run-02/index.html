@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  TREC Dataset with EDA - Run 02
+</h1>
+<p class="subtitle"><strong>2023-07-07</strong></p>
+<p>Another benefit that I see in starting small and just using some basic datasets, is that is gives us a nice opportunity to explore data augmentation techniques. There are plenty of them out there of course, but focusing on some of the simpler ones can give us a way to expand our training set and hopefully get some better results our of our model. But of course, like most of these trials, even when it all goes wrong at least we can examine the results closely and gain a better understanding of why any issues occur.</p>
+<p>With that said, we will start Run_02 by using one of these simple data augmentation techniques: Simple Synonym Replacement</p>
+<h3 id="the-stolen-code">The Stolen Code:</h3>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>        </span><span style="color:#65737e;">########################################################################
+</span><span>        </span><span style="color:#65737e;"># Synonym replacement
+</span><span>        </span><span style="color:#65737e;"># Replace n words in the sentence with synonyms from wordnet
+</span><span>        </span><span style="color:#65737e;">########################################################################
+</span><span>
+</span><span>        </span><span style="color:#65737e;">#for the first time you use wordnet
+</span><span>        </span><span style="color:#65737e;">#import nltk
+</span><span>        </span><span style="color:#65737e;">#nltk.download(&#39;wordnet&#39;)
+</span><span>        </span><span style="color:#b48ead;">from </span><span>nltk.corpus </span><span style="color:#b48ead;">import </span><span>wordnet 
+</span><span>
+</span><span>        </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">synonym_replacement</span><span>(</span><span style="color:#bf616a;">words</span><span>, </span><span style="color:#bf616a;">n</span><span>):
+</span><span>            new_words = words.</span><span style="color:#bf616a;">copy</span><span>()
+</span><span>            random_word_list = </span><span style="color:#bf616a;">list</span><span>(</span><span style="color:#bf616a;">set</span><span>([word </span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span>words </span><span style="color:#b48ead;">if </span><span>word not in stop_words]))
+</span><span>            random.</span><span style="color:#bf616a;">shuffle</span><span>(random_word_list)
+</span><span>            num_replaced = </span><span style="color:#d08770;">0
+</span><span>            </span><span style="color:#b48ead;">for </span><span>random_word </span><span style="color:#b48ead;">in </span><span>random_word_list:
+</span><span>                synonyms = </span><span style="color:#bf616a;">get_synonyms</span><span>(random_word)
+</span><span>                </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">len</span><span>(synonyms) &gt;= </span><span style="color:#d08770;">1</span><span>:
+</span><span>                    synonym = random.</span><span style="color:#bf616a;">choice</span><span>(</span><span style="color:#bf616a;">list</span><span>(synonyms))
+</span><span>                    new_words = [synonym </span><span style="color:#b48ead;">if </span><span>word == random_word </span><span style="color:#b48ead;">else </span><span>word </span><span style="color:#b48ead;">for </span><span>word </span><span style="color:#b48ead;">in </span><span>new_words]
+</span><span>                    </span><span style="color:#65737e;">#print(&quot;replaced&quot;, random_word, &quot;with&quot;, synonym)
+</span><span>                    num_replaced += </span><span style="color:#d08770;">1
+</span><span>                </span><span style="color:#b48ead;">if </span><span>num_replaced &gt;= n: </span><span style="color:#65737e;">#only replace up to n words
+</span><span>                    </span><span style="color:#b48ead;">break
+</span><span>
+</span><span>            </span><span style="color:#65737e;">#this is stupid but we need it, trust me
+</span><span>            sentence = &#39; &#39;.</span><span style="color:#bf616a;">join</span><span>(new_words)
+</span><span>            new_words = sentence.</span><span style="color:#bf616a;">split</span><span>(&#39; &#39;)
+</span><span>
+</span><span>            </span><span style="color:#b48ead;">return </span><span>new_words
+</span><span>
+</span><span>        </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_synonyms</span><span>(</span><span style="color:#bf616a;">word</span><span>):
+</span><span>            synonyms = </span><span style="color:#bf616a;">set</span><span>()
+</span><span>            </span><span style="color:#b48ead;">for </span><span>syn </span><span style="color:#b48ead;">in </span><span>wordnet.</span><span style="color:#bf616a;">synsets</span><span>(word): 
+</span><span>                </span><span style="color:#b48ead;">for </span><span>l </span><span style="color:#b48ead;">in </span><span>syn.</span><span style="color:#bf616a;">lemmas</span><span>(): 
+</span><span>                    synonym = l.</span><span style="color:#bf616a;">name</span><span>().</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">_</span><span>&quot;, &quot; &quot;).</span><span style="color:#bf616a;">replace</span><span>(&quot;</span><span style="color:#a3be8c;">-</span><span>&quot;, &quot; &quot;).</span><span style="color:#bf616a;">lower</span><span>()
+</span><span>                    synonym = &quot;&quot;.</span><span style="color:#bf616a;">join</span><span>([char </span><span style="color:#b48ead;">for </span><span>char </span><span style="color:#b48ead;">in </span><span>synonym </span><span style="color:#b48ead;">if </span><span>char in &#39;</span><span style="color:#a3be8c;"> qwertyuiopasdfghjklzxcvbnm</span><span>&#39;])
+</span><span>                    synonyms.</span><span style="color:#bf616a;">add</span><span>(synonym) 
+</span><span>            </span><span style="color:#b48ead;">if </span><span>word in synonyms:
+</span><span>                synonyms.</span><span style="color:#bf616a;">remove</span><span>(word)
+</span><span>            </span><span style="color:#b48ead;">return </span><span style="color:#bf616a;">list</span><span>(synonyms)
+</span></code></pre>
+<p>There was a little hangup here as well. Wordnet really seems to just work when it feels like it.</p>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

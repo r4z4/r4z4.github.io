@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  GloVe Run 01
+</h1>
+<p class="subtitle"><strong>2023-03-02</strong></p>
+<p>Here I am using the <a href="https://nlp.stanford.edu/projects/glove/">GloVe</a> (Global Vectors for Word Representation) embeddings from Stanford in 2014.
+&quot;GloVe is an unsupervised learning algorithm for obtaining vector representations for words.&quot;</p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span style="color:#b48ead;">import </span><span>regex </span><span style="color:#b48ead;">as </span><span>re
+</span><span style="color:#b48ead;">import </span><span>pandas </span><span style="color:#b48ead;">as </span><span>pd
+</span><span style="color:#b48ead;">from </span><span>tqdm.notebook </span><span style="color:#b48ead;">import </span><span>tqdm
+</span><span style="color:#b48ead;">import </span><span>matplotlib.pyplot </span><span style="color:#b48ead;">as </span><span>plt
+</span><span style="color:#b48ead;">import </span><span>seaborn </span><span style="color:#b48ead;">as </span><span>sns
+</span><span style="color:#b48ead;">from </span><span>sklearn </span><span style="color:#b48ead;">import </span><span>preprocessing
+</span><span>
+</span><span style="color:#b48ead;">import </span><span>keras
+</span><span style="color:#b48ead;">from </span><span>keras.models </span><span style="color:#b48ead;">import </span><span>Sequential
+</span><span style="color:#b48ead;">from </span><span>keras.layers </span><span style="color:#b48ead;">import </span><span>Dense
+</span><span style="color:#b48ead;">from </span><span>keras.layers </span><span style="color:#b48ead;">import </span><span>Flatten
+</span><span style="color:#b48ead;">from </span><span>keras.layers </span><span style="color:#b48ead;">import </span><span>Embedding
+</span><span style="color:#b48ead;">import </span><span>tensorflow </span><span style="color:#b48ead;">as </span><span>tf
+</span><span style="color:#b48ead;">from </span><span>keras.preprocessing.text </span><span style="color:#b48ead;">import </span><span>Tokenizer
+</span><span style="color:#b48ead;">from </span><span>keras.utils </span><span style="color:#b48ead;">import </span><span>pad_sequences
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df = pd.</span><span style="color:#bf616a;">read_pickle</span><span>(&#39;</span><span style="color:#a3be8c;">./data/dataframes/outer_merged_normalized.pkl</span><span>&#39;)
+</span><span>df.shape
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(37660, 2)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df.</span><span style="color:#bf616a;">drop_duplicates</span><span>(</span><span style="color:#bf616a;">inplace </span><span>= </span><span style="color:#d08770;">True</span><span>)
+</span><span>df.shape
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(8479, 2)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>all_categories = [&#39;</span><span style="color:#a3be8c;">sport</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">autos</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">religion</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">comp_elec</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">sci_med</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">seller</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">politics</span><span>&#39;]
+</span><span style="color:#65737e;"># We&#39;ll use all
+</span><span>target_categories = [&#39;</span><span style="color:#a3be8c;">sport</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">autos</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">religion</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">comp_elec</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">sci_med</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">seller</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">politics</span><span>&#39;]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;"># container for sentences
+</span><span>X = np.</span><span style="color:#bf616a;">array</span><span>([subject </span><span style="color:#b48ead;">for </span><span>subject </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">subject</span><span>&#39;]])
+</span><span style="color:#65737e;"># container for sentences
+</span><span>y = np.</span><span style="color:#bf616a;">array</span><span>([subject </span><span style="color:#b48ead;">for </span><span>subject </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">newsgroup</span><span>&#39;]])
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>sklearn.preprocessing </span><span style="color:#b48ead;">import </span><span>LabelEncoder
+</span><span>encoder = </span><span style="color:#bf616a;">LabelEncoder</span><span>()
+</span><span>y = encoder.</span><span style="color:#bf616a;">fit_transform</span><span>(df[&#39;</span><span style="color:#a3be8c;">newsgroup</span><span>&#39;])
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>sklearn.model_selection </span><span style="color:#b48ead;">import </span><span>train_test_split
+</span><span>X_train, X_test, y_train, y_test = </span><span style="color:#bf616a;">train_test_split</span><span>(X, y,
+</span><span>                                                    </span><span style="color:#bf616a;">stratify</span><span>=y, 
+</span><span>                                                    </span><span style="color:#bf616a;">test_size</span><span>=</span><span style="color:#d08770;">0.25</span><span>)
+</span><span>
+</span><span>classes = np.</span><span style="color:#bf616a;">unique</span><span>(y_train)
+</span><span>mapping = </span><span style="color:#bf616a;">dict</span><span>(</span><span style="color:#96b5b4;">zip</span><span>(classes, target_categories))
+</span><span>
+</span><span style="color:#96b5b4;">len</span><span>(X_train), </span><span style="color:#96b5b4;">len</span><span>(X_test), classes, mapping
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(6359,
+</span><span> 2120,
+</span><span> array([0, 1, 2, 3, 4, 5, 6]),
+</span><span> {0: &#39;sport&#39;,
+</span><span>  1: &#39;autos&#39;,
+</span><span>  2: &#39;religion&#39;,
+</span><span>  3: &#39;comp_elec&#39;,
+</span><span>  4: &#39;sci_med&#39;,
+</span><span>  5: &#39;seller&#39;,
+</span><span>  6: &#39;politics&#39;})
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>max_tokens = </span><span style="color:#d08770;">50 
+</span><span>
+</span><span>tokenizer = </span><span style="color:#bf616a;">Tokenizer</span><span>()
+</span><span>tokenizer.</span><span style="color:#bf616a;">fit_on_texts</span><span>(X)
+</span><span>
+</span><span style="color:#65737e;">## Vectorizing data to keep 50 words per sample.
+</span><span>X_train_vect = </span><span style="color:#bf616a;">pad_sequences</span><span>(tokenizer.</span><span style="color:#bf616a;">texts_to_sequences</span><span>(X_train), </span><span style="color:#bf616a;">maxlen</span><span>=max_tokens, </span><span style="color:#bf616a;">padding</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">truncating</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">value</span><span>=</span><span style="color:#d08770;">0.</span><span>)
+</span><span>X_test_vect  = </span><span style="color:#bf616a;">pad_sequences</span><span>(tokenizer.</span><span style="color:#bf616a;">texts_to_sequences</span><span>(X_test), </span><span style="color:#bf616a;">maxlen</span><span>=max_tokens, </span><span style="color:#bf616a;">padding</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">truncating</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">value</span><span>=</span><span style="color:#d08770;">0.</span><span>)
+</span><span>
+</span><span style="color:#96b5b4;">print</span><span>(X_train_vect[:</span><span style="color:#d08770;">3</span><span>])
+</span><span>
+</span><span>X_train_vect.shape, X_test_vect.shape
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[[ 403  190 1585    4 5718    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [  40 1931    4    2  305  783    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [  40  245   84   58    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]]
+</span><span>
+</span><span>
+</span><span>((6359, 50), (2120, 50))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Vocab Size : </span><span style="color:#d08770;">{}</span><span>&quot;.</span><span style="color:#bf616a;">format</span><span>(</span><span style="color:#96b5b4;">len</span><span>(tokenizer.word_index)))
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>Vocab Size : 9734
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>path = &#39;</span><span style="color:#a3be8c;">./glove.6B.50d.txt</span><span>&#39;
+</span><span>glove_embeddings = {}
+</span><span style="color:#b48ead;">with </span><span style="color:#96b5b4;">open</span><span>(path) </span><span style="color:#b48ead;">as </span><span>f:
+</span><span>    </span><span style="color:#b48ead;">for </span><span>line </span><span style="color:#b48ead;">in </span><span>f:
+</span><span>        </span><span style="color:#b48ead;">try</span><span>:
+</span><span>            line = line.</span><span style="color:#bf616a;">split</span><span>()
+</span><span>            glove_embeddings[line[</span><span style="color:#d08770;">0</span><span>]] = np.</span><span style="color:#bf616a;">array</span><span>(line[</span><span style="color:#d08770;">1</span><span>:], </span><span style="color:#bf616a;">dtype</span><span>=np.float32)
+</span><span>        </span><span style="color:#b48ead;">except</span><span>:
+</span><span>            </span><span style="color:#b48ead;">continue
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>embed_len = </span><span style="color:#d08770;">50
+</span><span>
+</span><span>word_embeddings = np.</span><span style="color:#bf616a;">zeros</span><span>((</span><span style="color:#96b5b4;">len</span><span>(tokenizer.index_word)+</span><span style="color:#d08770;">1</span><span>, embed_len))
+</span><span>
+</span><span style="color:#b48ead;">for </span><span>idx, word </span><span style="color:#b48ead;">in </span><span>tokenizer.index_word.</span><span style="color:#bf616a;">items</span><span>():
+</span><span>    word_embeddings[idx] = glove_embeddings.</span><span style="color:#bf616a;">get</span><span>(word, np.</span><span style="color:#bf616a;">zeros</span><span>(embed_len))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>word_embeddings[</span><span style="color:#d08770;">1</span><span>][:</span><span style="color:#d08770;">10</span><span>]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>array([ 0.15272   ,  0.36181   , -0.22168   ,  0.066051  ,  0.13029   ,
+</span><span>        0.37075001, -0.75874001, -0.44722   ,  0.22563   ,  0.10208   ])
+</span></code></pre>
+<h3 id="approach-1-glove-embeddings-flattened-max-tokens-50-embedding-length-300">Approach 1: GloVe Embeddings Flattened (Max Tokens=50, Embedding Length=300)</h3>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>model = </span><span style="color:#bf616a;">Sequential</span><span>([
+</span><span>                    </span><span style="color:#bf616a;">Embedding</span><span>(</span><span style="color:#bf616a;">input_dim</span><span>=</span><span style="color:#96b5b4;">len</span><span>(tokenizer.index_word)+</span><span style="color:#d08770;">1</span><span>, </span><span style="color:#bf616a;">output_dim</span><span>=embed_len,
+</span><span>                              </span><span style="color:#bf616a;">input_length</span><span>=max_tokens, </span><span style="color:#bf616a;">trainable</span><span>=</span><span style="color:#d08770;">False</span><span>, </span><span style="color:#bf616a;">weights</span><span>=[word_embeddings]),
+</span><span>                    </span><span style="color:#bf616a;">Flatten</span><span>(),
+</span><span>                    </span><span style="color:#bf616a;">Dense</span><span>(</span><span style="color:#d08770;">128</span><span>, </span><span style="color:#bf616a;">activation</span><span>=&quot;</span><span style="color:#a3be8c;">relu</span><span>&quot;),
+</span><span>                    </span><span style="color:#bf616a;">Dense</span><span>(</span><span style="color:#d08770;">64</span><span>, </span><span style="color:#bf616a;">activation</span><span>=&quot;</span><span style="color:#a3be8c;">relu</span><span>&quot;),
+</span><span>                    </span><span style="color:#bf616a;">Dense</span><span>(</span><span style="color:#96b5b4;">len</span><span>(target_categories), </span><span style="color:#bf616a;">activation</span><span>=&quot;</span><span style="color:#a3be8c;">softmax</span><span>&quot;)
+</span><span>                ])
+</span><span>model._name = &quot;</span><span style="color:#a3be8c;">SparseCategoricalEntireData</span><span>&quot;
+</span><span>model.</span><span style="color:#bf616a;">summary</span><span>()
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>Model: &quot;SparseCategoricalEntireData&quot;
+</span><span>_________________________________________________________________
+</span><span> Layer (type)                Output Shape              Param #   
+</span><span>=================================================================
+</span><span> embedding (Embedding)       (None, 50, 50)            486750    
+</span><span>                                                                 
+</span><span> flatten (Flatten)           (None, 2500)              0         
+</span><span>                                                                 
+</span><span> dense (Dense)               (None, 128)               320128    
+</span><span>                                                                 
+</span><span> dense_1 (Dense)             (None, 64)                8256      
+</span><span>                                                                 
+</span><span> dense_2 (Dense)             (None, 7)                 455       
+</span><span>                                                                 
+</span><span>=================================================================
+</span><span>Total params: 815,589
+</span><span>Trainable params: 328,839
+</span><span>Non-trainable params: 486,750
+</span><span>_________________________________________________________________
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>model.weights[</span><span style="color:#d08770;">0</span><span>][</span><span style="color:#d08770;">1</span><span>][:</span><span style="color:#d08770;">10</span><span>], word_embeddings[</span><span style="color:#d08770;">1</span><span>][:</span><span style="color:#d08770;">10</span><span>]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>(&lt;tf.Tensor: shape=(10,), dtype=float32, numpy=
+</span><span> array([ 0.15272 ,  0.36181 , -0.22168 ,  0.066051,  0.13029 ,  0.37075 ,
+</span><span>        -0.75874 , -0.44722 ,  0.22563 ,  0.10208 ], dtype=float32)&gt;,
+</span><span> array([ 0.15272   ,  0.36181   , -0.22168   ,  0.066051  ,  0.13029   ,
+</span><span>         0.37075001, -0.75874001, -0.44722   ,  0.22563   ,  0.10208   ]))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>model.</span><span style="color:#bf616a;">compile</span><span>(</span><span style="color:#bf616a;">optimizer</span><span>=&quot;</span><span style="color:#a3be8c;">adam</span><span>&quot;, </span><span style="color:#bf616a;">loss</span><span>=&quot;</span><span style="color:#a3be8c;">sparse_categorical_crossentropy</span><span>&quot;, </span><span style="color:#bf616a;">metrics</span><span>=[&quot;</span><span style="color:#a3be8c;">accuracy</span><span>&quot;])
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>model.</span><span style="color:#bf616a;">fit</span><span>(X_train_vect, y_train, </span><span style="color:#bf616a;">batch_size</span><span>=</span><span style="color:#d08770;">32</span><span>, </span><span style="color:#bf616a;">epochs</span><span>=</span><span style="color:#d08770;">8</span><span>, </span><span style="color:#bf616a;">validation_data</span><span>=(X_test_vect, y_test))
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>Epoch 1/8
+</span><span>199/199 [==============================] - 2s 7ms/step - loss: 1.0914 - accuracy: 0.6204 - val_loss: 0.8999 - val_accuracy: 0.6991
+</span><span>Epoch 2/8
+</span><span>199/199 [==============================] - 1s 7ms/step - loss: 0.7200 - accuracy: 0.7523 - val_loss: 0.8842 - val_accuracy: 0.7005
+</span><span>Epoch 3/8
+</span><span>199/199 [==============================] - 1s 6ms/step - loss: 0.5846 - accuracy: 0.8039 - val_loss: 0.9162 - val_accuracy: 0.6943
+</span><span>Epoch 4/8
+</span><span>199/199 [==============================] - 1s 6ms/step - loss: 0.4762 - accuracy: 0.8413 - val_loss: 0.9271 - val_accuracy: 0.7113
+</span><span>Epoch 5/8
+</span><span>199/199 [==============================] - 1s 6ms/step - loss: 0.3774 - accuracy: 0.8777 - val_loss: 0.9703 - val_accuracy: 0.7014
+</span><span>Epoch 6/8
+</span><span>199/199 [==============================] - 1s 7ms/step - loss: 0.2971 - accuracy: 0.9093 - val_loss: 1.0452 - val_accuracy: 0.7033
+</span><span>Epoch 7/8
+</span><span>199/199 [==============================] - 1s 6ms/step - loss: 0.2273 - accuracy: 0.9338 - val_loss: 1.1258 - val_accuracy: 0.7014
+</span><span>Epoch 8/8
+</span><span>199/199 [==============================] - 1s 6ms/step - loss: 0.1769 - accuracy: 0.9533 - val_loss: 1.2192 - val_accuracy: 0.6943
+</span><span>
+</span><span>
+</span><span>&lt;keras.callbacks.History at 0x7fefde115520&gt;
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>sklearn.metrics </span><span style="color:#b48ead;">import </span><span>accuracy_score, classification_report, confusion_matrix
+</span><span>
+</span><span>y_preds = model.</span><span style="color:#bf616a;">predict</span><span>(X_test_vect).</span><span style="color:#bf616a;">argmax</span><span>(</span><span style="color:#bf616a;">axis</span><span>=-</span><span style="color:#d08770;">1</span><span>)
+</span><span>
+</span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Test Accuracy : </span><span style="color:#d08770;">{}</span><span>&quot;.</span><span style="color:#bf616a;">format</span><span>(</span><span style="color:#bf616a;">accuracy_score</span><span>(y_test, y_preds)))
+</span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#96b5b4;">\n</span><span style="color:#a3be8c;">Classification Report : </span><span>&quot;)
+</span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#bf616a;">classification_report</span><span>(y_test, y_preds, </span><span style="color:#bf616a;">target_names</span><span>=target_categories))
+</span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#96b5b4;">\n</span><span style="color:#a3be8c;">Confusion Matrix : </span><span>&quot;)
+</span><span style="color:#96b5b4;">print</span><span>(</span><span style="color:#bf616a;">confusion_matrix</span><span>(y_test, y_preds))
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>67/67 [==============================] - 0s 2ms/step
+</span><span>Test Accuracy : 0.6943396226415094
+</span><span>
+</span><span>Classification Report : 
+</span><span>              precision    recall  f1-score   support
+</span><span>
+</span><span>       sport       0.54      0.49      0.51       189
+</span><span>       autos       0.77      0.84      0.80       901
+</span><span>    religion       0.60      0.62      0.61       220
+</span><span>   comp_elec       0.66      0.56      0.61       179
+</span><span>     sci_med       0.65      0.47      0.55       192
+</span><span>      seller       0.59      0.58      0.59       221
+</span><span>    politics       0.72      0.78      0.75       218
+</span><span>
+</span><span>    accuracy                           0.69      2120
+</span><span>   macro avg       0.65      0.62      0.63      2120
+</span><span>weighted avg       0.69      0.69      0.69      2120
+</span><span>
+</span><span>
+</span><span>Confusion Matrix : 
+</span><span>[[ 92  42   9   5   7  27   7]
+</span><span> [ 37 755  28   8  14  46  13]
+</span><span> [ 10  22 137  21  10   4  16]
+</span><span> [  3  25  30 101   8   1  11]
+</span><span> [  8  59  12  11  90   5   7]
+</span><span> [ 12  59   3   0   8 128  11]
+</span><span> [  8  18   9   8   1   5 169]]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;"># TensorFlow SavedModel format =&gt; .keras
+</span><span>model_file = &#39;</span><span style="color:#a3be8c;">models/sparse_cat_entire</span><span>&#39;
+</span><span>model.</span><span style="color:#bf616a;">save</span><span>(model_file)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>!pip install scikit-plot
+</span><span style="color:#b48ead;">from </span><span>sklearn.metrics </span><span style="color:#b48ead;">import </span><span>confusion_matrix
+</span><span style="color:#b48ead;">import </span><span>scikitplot </span><span style="color:#b48ead;">as </span><span>skplt
+</span><span style="color:#b48ead;">import </span><span>matplotlib.pyplot </span><span style="color:#b48ead;">as </span><span>plt
+</span><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span>
+</span><span>skplt.metrics.</span><span style="color:#bf616a;">plot_confusion_matrix</span><span>([target_categories[i] </span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span>y_test], [target_categories[i] </span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span>y_preds],
+</span><span>                                    </span><span style="color:#bf616a;">normalize</span><span>=</span><span style="color:#d08770;">True</span><span>,
+</span><span>                                    </span><span style="color:#bf616a;">title</span><span>=&quot;</span><span style="color:#a3be8c;">Confusion Matrix</span><span>&quot;,
+</span><span>                                    </span><span style="color:#bf616a;">cmap</span><span>=&quot;</span><span style="color:#a3be8c;">Greens</span><span>&quot;,
+</span><span>                                    </span><span style="color:#bf616a;">hide_zeros</span><span>=</span><span style="color:#d08770;">True</span><span>,
+</span><span>                                    </span><span style="color:#bf616a;">figsize</span><span>=(</span><span style="color:#d08770;">5</span><span>,</span><span style="color:#d08770;">5</span><span>)
+</span><span>                                    );
+</span><span>plt.</span><span style="color:#bf616a;">xticks</span><span>(</span><span style="color:#bf616a;">rotation</span><span>=</span><span style="color:#d08770;">90</span><span>);
+</span></code></pre>
+<p><img src="/me/images/glove/run_01.png#img-thumbnail" alt="png" /></p>
+<h3 id="custom-test">Custom Test</h3>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;"># define documents
+</span><span>docs = [&#39;</span><span style="color:#a3be8c;">Democrats the Reuplicans are both the worst!</span><span>&#39;,
+</span><span>&#39;</span><span style="color:#a3be8c;">Coyotes win 10-0</span><span>&#39;,
+</span><span>&#39;</span><span style="color:#a3be8c;">Houston Astros defeat the Cubs</span><span>&#39;,
+</span><span>&#39;</span><span style="color:#a3be8c;">Apple and Microsoft both make great computers</span><span>&#39;,
+</span><span>&#39;</span><span style="color:#a3be8c;">New washer 4sale. $200</span><span>&#39;]
+</span><span>
+</span><span>doc_array = np.</span><span style="color:#bf616a;">array</span><span>(docs)
+</span><span>
+</span><span>doc_array_vect  = </span><span style="color:#bf616a;">pad_sequences</span><span>(tokenizer.</span><span style="color:#bf616a;">texts_to_sequences</span><span>(doc_array), </span><span style="color:#bf616a;">maxlen</span><span>=max_tokens, </span><span style="color:#bf616a;">padding</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">truncating</span><span>=&quot;</span><span style="color:#a3be8c;">post</span><span>&quot;, </span><span style="color:#bf616a;">value</span><span>=</span><span style="color:#d08770;">0.</span><span>)
+</span><span>
+</span><span>cstm_test_preds = model.</span><span style="color:#bf616a;">predict</span><span>(doc_array_vect).</span><span style="color:#bf616a;">argmax</span><span>(</span><span style="color:#bf616a;">axis</span><span>=-</span><span style="color:#d08770;">1</span><span>)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>1/1 [==============================] - 0s 20ms/step
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">print</span><span>(doc_array)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[&#39;Democrats the Reuplicans are both the worst!&#39; &#39;Coyotes win 10-0&#39;
+</span><span> &#39;Houston Astros defeat the Cubs&#39;
+</span><span> &#39;Apple and Microsoft both make great computers&#39; &#39;New washer 4sale. $200&#39;]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">print</span><span>(doc_array_vect)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[[   2   53 3716    2 1299    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [  69  199   47    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [2931 4257    2 1113    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [ 124    3  461 3716  277  580 1149    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]
+</span><span> [  27  842  542    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+</span><span>     0    0    0    0    0    0    0    0]]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">print</span><span>(cstm_test_preds)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[6 6 6 1 5]
+</span></code></pre>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

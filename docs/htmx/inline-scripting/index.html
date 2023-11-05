@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Inline Scripting w&#x2F; Hyperscript (Controversial!!)
+</h1>
+<p class="subtitle"><strong>2023-10-16</strong></p>
+<hr />
+<p>One of the more interesting and still-unclear-to-me aspects of HTMX is hyperscript, its companion library that compares itself to jQuery. I only say still-unclear-to-me because at this point I am not really sure widespread its adoption will be. Anything that goes up against traditional JS in this space seems to have a steep climb, plus its syntax takes some getting used to. It’s nice, and its readable … but its just not what most people will be used to (at least from what I gather).</p>
+<hr />
+<p>What I also learned along the way was that it is a controversial practice, which means sign me up. Per the docs...</p>
+<blockquote>
+<p>This is a controversial concept compared with the others listed here, and we consider it an “optional” rule for hypermedia-friendly scripting: worth considering but not required.</p>
+</blockquote>
+<hr />
+<p>After using it for a little bit it does seem to carry a lot of power. I think what also goes into my still-unclear status also relates to just where it might fit into a typical project. Of course that could mean anything and it could be that start of the show or simply a little UI element used on some obscure page. I tend to think that the latter might be a little more suitable, because once we start getting past one or two mutations or reactions on a certain element, I can see things getting unwieldy, especially if you are someone who is not used to working with raw HTML a lot.</p>
+<hr />
+<p>Here is some hyperscript that I am using to simply disables some form inputs based on the values of other elements. This is a pretty common scenario where we have a form and only certain fields make sense in certain cases, so we want to just go ahead and disable them to prevent the user from even trying to sneak something in. So, here, we have a first_name and last_name field and then a company_name field. Only one of these should ever be filled (first + last or company) so we can add that directly on our elements as such:</p>
+<hr />
+<pre data-lang="html" style="background-color:#2b303b;color:#c0c5ce;" class="language-html "><code class="language-html" data-lang="html"><span>      &lt;</span><span style="color:#bf616a;">li</span><span>&gt;
+</span><span>          &lt;</span><span style="color:#bf616a;">input 
+</span><span style="color:#d08770;">            type</span><span>=&quot;</span><span style="color:#a3be8c;">text</span><span>&quot; 
+</span><span style="color:#d08770;">            name</span><span>=&quot;</span><span style="color:#a3be8c;">client_company_name</span><span>&quot; 
+</span><span style="color:#d08770;">            </span><span style="color:#8fa1b3;">id</span><span>=&quot;</span><span style="color:#a3be8c;">client_company_name</span><span>&quot;
+</span><span style="color:#d08770;">            class</span><span>=&quot;</span><span style="color:#a3be8c;">field-style field-full align-none</span><span>&quot; 
+</span><span style="color:#d08770;">            placeholder</span><span>=&quot;</span><span style="color:#a3be8c;">Client Company Name</span><span>&quot; 
+</span><span style="color:#d08770;">            value</span><span>=&quot;</span><span style="color:#a3be8c;">{{entity.client_company_name}}</span><span>&quot; 
+</span><span style="color:#d08770;">            _</span><span>=&quot;</span><span style="color:#a3be8c;">on keyup 
+</span><span style="color:#a3be8c;">              if my.value 
+</span><span style="color:#a3be8c;">              repeat for x in [#client_f_name, #client_l_name]
+</span><span style="color:#a3be8c;">                add @readonly to x
+</span><span style="color:#a3be8c;">              end
+</span><span style="color:#a3be8c;">              otherwise
+</span><span style="color:#a3be8c;">              repeat for x in [#client_f_name, #client_l_name]
+</span><span style="color:#a3be8c;">                remove @readonly from x
+</span><span style="color:#a3be8c;">              end</span><span>&quot; 
+</span><span style="color:#d08770;">            </span><span>/&gt;
+</span><span>      &lt;/</span><span style="color:#bf616a;">li</span><span>&gt;
+</span><span>      &lt;</span><span style="color:#bf616a;">li</span><span>&gt;
+</span><span>          &lt;</span><span style="color:#bf616a;">input 
+</span><span style="color:#d08770;">            type</span><span>=&quot;</span><span style="color:#a3be8c;">text</span><span>&quot; 
+</span><span style="color:#d08770;">            </span><span style="color:#8fa1b3;">id</span><span>=&quot;</span><span style="color:#a3be8c;">client_f_name</span><span>&quot; 
+</span><span style="color:#d08770;">            name</span><span>=&quot;</span><span style="color:#a3be8c;">client_f_name</span><span>&quot; 
+</span><span style="color:#d08770;">            class</span><span>=&quot;</span><span style="color:#a3be8c;">field-style field-split align-left</span><span>&quot; 
+</span><span style="color:#d08770;">            placeholder</span><span>=&quot;</span><span style="color:#a3be8c;">First Name</span><span>&quot; 
+</span><span style="color:#d08770;">            value</span><span>=&quot;</span><span style="color:#a3be8c;">{{entity.client_f_name}}</span><span>&quot; 
+</span><span style="color:#d08770;">            _</span><span>=&quot;</span><span style="color:#a3be8c;">on keyup 
+</span><span style="color:#a3be8c;">              if my.value 
+</span><span style="color:#a3be8c;">                add @readonly to #client_company_name
+</span><span style="color:#a3be8c;">              otherwise
+</span><span style="color:#a3be8c;">                if #client_l_name.value
+</span><span style="color:#a3be8c;">                  add @readonly to #client_company_name
+</span><span style="color:#a3be8c;">                otherwise
+</span><span style="color:#a3be8c;">                  remove @readonly from #client_company_name</span><span>&quot;
+</span><span style="color:#d08770;">            </span><span>/&gt;
+</span><span>          &lt;</span><span style="color:#bf616a;">input 
+</span><span style="color:#d08770;">            type</span><span>=&quot;</span><span style="color:#a3be8c;">text</span><span>&quot; 
+</span><span style="color:#d08770;">            </span><span style="color:#8fa1b3;">id</span><span>=&quot;</span><span style="color:#a3be8c;">client_l_name</span><span>&quot; 
+</span><span style="color:#d08770;">            name</span><span>=&quot;</span><span style="color:#a3be8c;">client_l_name</span><span>&quot; 
+</span><span style="color:#d08770;">            class</span><span>=&quot;</span><span style="color:#a3be8c;">field-style field-split align-right</span><span>&quot; 
+</span><span style="color:#d08770;">            placeholder</span><span>=&quot;</span><span style="color:#a3be8c;">Last Name</span><span>&quot; 
+</span><span style="color:#d08770;">            value</span><span>=&quot;</span><span style="color:#a3be8c;">{{entity.client_l_name}}</span><span>&quot; 
+</span><span style="color:#d08770;">            _</span><span>=&quot;</span><span style="color:#a3be8c;">on keyup 
+</span><span style="color:#a3be8c;">              if my.value 
+</span><span style="color:#a3be8c;">                add @readonly to #client_company_name
+</span><span style="color:#a3be8c;">              otherwise
+</span><span style="color:#a3be8c;">                if #client_f_name.value
+</span><span style="color:#a3be8c;">                  add @readonly to #client_company_name
+</span><span style="color:#a3be8c;">                otherwise
+</span><span style="color:#a3be8c;">                  remove @readonly from #client_company_name</span><span>&quot;
+</span><span style="color:#d08770;">          </span><span>/&gt;
+</span><span>      &lt;/</span><span style="color:#bf616a;">li</span><span>&gt;
+</span></code></pre>
+<hr />
+<p>So as you can see despite not being complicated at all and being pretty easy to read and understand, the formatting alone can result in some long spanning code that some people just might not prefer. I am still getting used to it myself, but in the end I think I will take the overall simplification that the library provides in the overall scheme of things and just learn to get used to having some larger HTML files (or template files in this case).</p>
+<hr />
+<h6>*As a side note, its always good to go back and understand these semantic HTML elements and what the attributes actually mean. It took me a couple tries to remember the exactly differences between disabled and readonly.</h6>
+
+    </div>
+  </section>
+</body>
+
+</html>

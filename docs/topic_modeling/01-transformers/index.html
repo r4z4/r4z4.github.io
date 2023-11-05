@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Topic Modeling on Surface Trivia Question Dataset
+</h1>
+<p class="subtitle"><strong>2023-08-16</strong></p>
+<p>I have worked with transformers a bit in the past but did not really account for my progress or do any real comparisons. I will be using the dataset that I assembled for a trivia app in Elixir that I built. There are a handful of categories each with a good amount of questions, and we will see that the transformers approach makes the process much easier.</p>
+<hr />
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>pandas </span><span style="color:#b48ead;">as </span><span>pd
+</span><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span style="color:#b48ead;">import </span><span>json
+</span><span style="color:#b48ead;">import </span><span>re
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>df = pd.</span><span style="color:#bf616a;">read_json</span><span>(&quot;</span><span style="color:#a3be8c;">trivia_data.json</span><span>&quot;)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">## Gonna take a while to embed all the data (&gt; 2hrs on CPU). Lets just use 20% of the data
+</span><span style="color:#65737e;"># n = 20
+</span><span style="color:#65737e;"># df = df.head(int(len(df)*(n/100)))
+</span><span>
+</span><span>data = df[&#39;</span><span style="color:#a3be8c;">corrected_question</span><span>&#39;]
+</span><span>data_array = np.</span><span style="color:#bf616a;">array</span><span>([e </span><span style="color:#b48ead;">for </span><span>e </span><span style="color:#b48ead;">in </span><span>df[&#39;</span><span style="color:#a3be8c;">corrected_question</span><span>&#39;]])
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#96b5b4;">len</span><span>(data)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>4000
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>sentence_transformers </span><span style="color:#b48ead;">import </span><span>SentenceTransformer
+</span><span>model = </span><span style="color:#bf616a;">SentenceTransformer</span><span>(&#39;</span><span style="color:#a3be8c;">distilbert-base-nli-mean-tokens</span><span>&#39;)
+</span><span>embeddings = model.</span><span style="color:#bf616a;">encode</span><span>(data, </span><span style="color:#bf616a;">show_progress_bar</span><span>=</span><span style="color:#d08770;">True</span><span>)
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>Batches:   0%|          | 0/125 [00:00&lt;?, ?it/s]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>umap.umap_ </span><span style="color:#b48ead;">as </span><span>umap
+</span><span>umap_embeddings = umap.</span><span style="color:#bf616a;">UMAP</span><span>(</span><span style="color:#bf616a;">n_neighbors</span><span>=</span><span style="color:#d08770;">15</span><span>, 
+</span><span>                            </span><span style="color:#bf616a;">n_components</span><span>=</span><span style="color:#d08770;">5</span><span>, 
+</span><span>                            </span><span style="color:#bf616a;">metric</span><span>=&#39;</span><span style="color:#a3be8c;">cosine</span><span>&#39;).</span><span style="color:#bf616a;">fit_transform</span><span>(embeddings)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>hdbscan
+</span><span>cluster = hdbscan.</span><span style="color:#bf616a;">HDBSCAN</span><span>(</span><span style="color:#bf616a;">min_cluster_size</span><span>=</span><span style="color:#d08770;">15</span><span>,
+</span><span>                          </span><span style="color:#bf616a;">metric</span><span>=&#39;</span><span style="color:#a3be8c;">euclidean</span><span>&#39;,                      
+</span><span>                          </span><span style="color:#bf616a;">cluster_selection_method</span><span>=&#39;</span><span style="color:#a3be8c;">eom</span><span>&#39;).</span><span style="color:#bf616a;">fit</span><span>(umap_embeddings)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>matplotlib.pyplot </span><span style="color:#b48ead;">as </span><span>plt
+</span><span>
+</span><span style="color:#65737e;"># Prepare data
+</span><span>umap_data = umap.</span><span style="color:#bf616a;">UMAP</span><span>(</span><span style="color:#bf616a;">n_neighbors</span><span>=</span><span style="color:#d08770;">15</span><span>, </span><span style="color:#bf616a;">n_components</span><span>=</span><span style="color:#d08770;">2</span><span>, </span><span style="color:#bf616a;">min_dist</span><span>=</span><span style="color:#d08770;">0.0</span><span>, </span><span style="color:#bf616a;">metric</span><span>=&#39;</span><span style="color:#a3be8c;">cosine</span><span>&#39;).</span><span style="color:#bf616a;">fit_transform</span><span>(embeddings)
+</span><span>result = pd.</span><span style="color:#bf616a;">DataFrame</span><span>(umap_data, </span><span style="color:#bf616a;">columns</span><span>=[&#39;</span><span style="color:#a3be8c;">x</span><span>&#39;, &#39;</span><span style="color:#a3be8c;">y</span><span>&#39;])
+</span><span>result[&#39;</span><span style="color:#a3be8c;">labels</span><span>&#39;] = cluster.labels_
+</span><span>
+</span><span style="color:#65737e;"># Visualize clusters
+</span><span>fig, ax = plt.</span><span style="color:#bf616a;">subplots</span><span>(</span><span style="color:#bf616a;">figsize</span><span>=(</span><span style="color:#d08770;">20</span><span>, </span><span style="color:#d08770;">10</span><span>))
+</span><span>outliers = result.loc[result.labels == -</span><span style="color:#d08770;">1</span><span>, :]
+</span><span>clustered = result.loc[result.labels != -</span><span style="color:#d08770;">1</span><span>, :]
+</span><span>plt.</span><span style="color:#bf616a;">scatter</span><span>(outliers.x, outliers.y, </span><span style="color:#bf616a;">color</span><span>=&#39;</span><span style="color:#a3be8c;">#BDBDBD</span><span>&#39;, </span><span style="color:#bf616a;">s</span><span>=</span><span style="color:#d08770;">0.05</span><span>)
+</span><span>plt.</span><span style="color:#bf616a;">scatter</span><span>(clustered.x, clustered.y, </span><span style="color:#bf616a;">c</span><span>=clustered.labels, </span><span style="color:#bf616a;">s</span><span>=</span><span style="color:#d08770;">0.05</span><span>, </span><span style="color:#bf616a;">cmap</span><span>=&#39;</span><span style="color:#a3be8c;">hsv_r</span><span>&#39;)
+</span><span>plt.</span><span style="color:#bf616a;">colorbar</span><span>()
+</span></code></pre>
+<p><img src="/assets/images/topic-modeling/01_transformers.png#img-thumbnail" alt="png" /></p>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>docs_df = pd.</span><span style="color:#bf616a;">DataFrame</span><span>(data_array, </span><span style="color:#bf616a;">columns</span><span>=[&quot;</span><span style="color:#a3be8c;">Doc</span><span>&quot;])
+</span><span>docs_df[&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;] = cluster.labels_
+</span><span>docs_df[&#39;</span><span style="color:#a3be8c;">Doc_ID</span><span>&#39;] = </span><span style="color:#96b5b4;">range</span><span>(</span><span style="color:#96b5b4;">len</span><span>(docs_df))
+</span><span>docs_per_topic = docs_df.</span><span style="color:#bf616a;">groupby</span><span>([&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;], </span><span style="color:#bf616a;">as_index </span><span>= </span><span style="color:#d08770;">False</span><span>).</span><span style="color:#bf616a;">agg</span><span>({&#39;</span><span style="color:#a3be8c;">Doc</span><span>&#39;: &#39; &#39;.join})
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>docs_per_topic.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>docs_df[&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;].</span><span style="color:#bf616a;">value_counts</span><span>()
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>-1     1338
+</span><span> 44     203
+</span><span> 17     203
+</span><span> 21     194
+</span><span> 29     137
+</span><span> 19     102
+</span><span> 38      96
+</span><span> 11      95
+</span><span> 39      86
+</span><span> 9       75
+</span><span> 33      73
+</span><span> 13      71
+</span><span> 45      70
+</span><span> 14      70
+</span><span> 35      67
+</span><span> 4       66
+</span><span> 10      64
+</span><span> 41      64
+</span><span> 7       64
+</span><span> 12      56
+</span><span> 42      54
+</span><span> 43      47
+</span><span> 36      47
+</span><span> 15      44
+</span><span> 23      42
+</span><span> 5       40
+</span><span> 26      38
+</span><span> 30      36
+</span><span> 8       34
+</span><span> 24      34
+</span><span> 37      33
+</span><span> 6       29
+</span><span> 3       28
+</span><span> 27      28
+</span><span> 0       27
+</span><span> 34      27
+</span><span> 2       26
+</span><span> 32      25
+</span><span> 18      21
+</span><span> 20      20
+</span><span> 28      19
+</span><span> 1       19
+</span><span> 22      19
+</span><span> 31      18
+</span><span> 40      18
+</span><span> 16      17
+</span><span> 25      16
+</span><span>Name: Topic, dtype: int64
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>docs_df.</span><span style="color:#bf616a;">head</span><span>()
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>numpy </span><span style="color:#b48ead;">as </span><span>np
+</span><span style="color:#b48ead;">from </span><span>sklearn.feature_extraction.text </span><span style="color:#b48ead;">import </span><span>CountVectorizer
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">c_tf_idf</span><span>(</span><span style="color:#bf616a;">documents</span><span>, </span><span style="color:#bf616a;">m</span><span>, </span><span style="color:#bf616a;">ngram_range</span><span>=(</span><span style="color:#d08770;">1</span><span>, </span><span style="color:#d08770;">1</span><span>)):
+</span><span>    count = </span><span style="color:#bf616a;">CountVectorizer</span><span>(</span><span style="color:#bf616a;">ngram_range</span><span>=ngram_range, </span><span style="color:#bf616a;">stop_words</span><span>=&quot;</span><span style="color:#a3be8c;">english</span><span>&quot;).</span><span style="color:#bf616a;">fit</span><span>(documents)
+</span><span>    t = count.</span><span style="color:#bf616a;">transform</span><span>(documents).</span><span style="color:#bf616a;">toarray</span><span>()
+</span><span>    w = t.</span><span style="color:#bf616a;">sum</span><span>(</span><span style="color:#bf616a;">axis</span><span>=</span><span style="color:#d08770;">1</span><span>)
+</span><span>    tf = np.</span><span style="color:#bf616a;">divide</span><span>(t.T, w)
+</span><span>    sum_t = t.</span><span style="color:#bf616a;">sum</span><span>(</span><span style="color:#bf616a;">axis</span><span>=</span><span style="color:#d08770;">0</span><span>)
+</span><span>    idf = np.</span><span style="color:#bf616a;">log</span><span>(np.</span><span style="color:#bf616a;">divide</span><span>(m, sum_t)).</span><span style="color:#bf616a;">reshape</span><span>(-</span><span style="color:#d08770;">1</span><span>, </span><span style="color:#d08770;">1</span><span>)
+</span><span>    tf_idf = np.</span><span style="color:#bf616a;">multiply</span><span>(tf, idf)
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">return </span><span>tf_idf, count
+</span><span>  
+</span><span>tf_idf, count = </span><span style="color:#bf616a;">c_tf_idf</span><span>(docs_per_topic.Doc.values, </span><span style="color:#bf616a;">m</span><span>=</span><span style="color:#96b5b4;">len</span><span>(data))
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">extract_top_n_words_per_topic</span><span>(</span><span style="color:#bf616a;">tf_idf</span><span>, </span><span style="color:#bf616a;">count</span><span>, </span><span style="color:#bf616a;">docs_per_topic</span><span>, </span><span style="color:#bf616a;">n</span><span>=</span><span style="color:#d08770;">20</span><span>):
+</span><span>    words = count.</span><span style="color:#bf616a;">get_feature_names_out</span><span>()
+</span><span>    labels = </span><span style="color:#bf616a;">list</span><span>(docs_per_topic.Topic)
+</span><span>    tf_idf_transposed = tf_idf.T
+</span><span>    indices = tf_idf_transposed.</span><span style="color:#bf616a;">argsort</span><span>()[:, -n:]
+</span><span>    top_n_words = {label: [(words[j], tf_idf_transposed[i][j]) </span><span style="color:#b48ead;">for </span><span>j </span><span style="color:#b48ead;">in </span><span>indices[i]][::-</span><span style="color:#d08770;">1</span><span>] </span><span style="color:#b48ead;">for </span><span>i, label </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">enumerate</span><span>(labels)}
+</span><span>    </span><span style="color:#b48ead;">return </span><span>top_n_words
+</span><span>
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">extract_topic_sizes</span><span>(</span><span style="color:#bf616a;">df</span><span>):
+</span><span>    topic_sizes = (df.</span><span style="color:#bf616a;">groupby</span><span>([&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;])
+</span><span>                     .Doc
+</span><span>                     .</span><span style="color:#bf616a;">count</span><span>()
+</span><span>                     .</span><span style="color:#bf616a;">reset_index</span><span>()
+</span><span>                     .</span><span style="color:#bf616a;">rename</span><span>({&quot;</span><span style="color:#a3be8c;">Topic</span><span>&quot;: &quot;</span><span style="color:#a3be8c;">Topic</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">Doc</span><span>&quot;: &quot;</span><span style="color:#a3be8c;">Size</span><span>&quot;}, </span><span style="color:#bf616a;">axis</span><span>=&#39;</span><span style="color:#a3be8c;">columns</span><span>&#39;)
+</span><span>                     .</span><span style="color:#bf616a;">sort_values</span><span>(&quot;</span><span style="color:#a3be8c;">Size</span><span>&quot;, </span><span style="color:#bf616a;">ascending</span><span>=</span><span style="color:#d08770;">False</span><span>))
+</span><span>    </span><span style="color:#b48ead;">return </span><span>topic_sizes
+</span><span>
+</span><span>top_n_words = </span><span style="color:#bf616a;">extract_top_n_words_per_topic</span><span>(tf_idf, count, docs_per_topic, </span><span style="color:#bf616a;">n</span><span>=</span><span style="color:#d08770;">20</span><span>)
+</span><span>topic_sizes = </span><span style="color:#bf616a;">extract_topic_sizes</span><span>(docs_df); topic_sizes.</span><span style="color:#bf616a;">head</span><span>(</span><span style="color:#d08770;">10</span><span>)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>top_n_words[</span><span style="color:#d08770;">21</span><span>][:</span><span style="color:#d08770;">10</span><span>]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[(&#39;television&#39;, 0.25199257520408436),
+</span><span> (&#39;tv&#39;, 0.2272489906622773),
+</span><span> (&#39;shows&#39;, 0.17306120187797722),
+</span><span> (&#39;network&#39;, 0.0945769606612006),
+</span><span> (&#39;theme&#39;, 0.08517609400440743),
+</span><span> (&#39;company&#39;, 0.08181918094364625),
+</span><span> (&#39;producer&#39;, 0.07445065395128529),
+</span><span> (&#39;executive&#39;, 0.05932842541421376),
+</span><span> (&#39;broadcast&#39;, 0.057600770775431076),
+</span><span> (&#39;series&#39;, 0.0476476709374204)]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">from </span><span>sklearn.metrics.pairwise </span><span style="color:#b48ead;">import </span><span>cosine_similarity
+</span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(</span><span style="color:#d08770;">20</span><span>):
+</span><span>    </span><span style="color:#65737e;"># Calculate cosine similarity
+</span><span>    similarities = </span><span style="color:#bf616a;">cosine_similarity</span><span>(tf_idf.T)
+</span><span>    np.</span><span style="color:#bf616a;">fill_diagonal</span><span>(similarities, </span><span style="color:#d08770;">0</span><span>)
+</span><span>
+</span><span>    </span><span style="color:#65737e;"># Extract label to merge into and from where
+</span><span>    topic_sizes = docs_df.</span><span style="color:#bf616a;">groupby</span><span>([&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;]).</span><span style="color:#bf616a;">count</span><span>().</span><span style="color:#bf616a;">sort_values</span><span>(&quot;</span><span style="color:#a3be8c;">Doc</span><span>&quot;, </span><span style="color:#bf616a;">ascending</span><span>=</span><span style="color:#d08770;">False</span><span>).</span><span style="color:#bf616a;">reset_index</span><span>()
+</span><span>    topic_to_merge = topic_sizes.iloc[-</span><span style="color:#d08770;">1</span><span>].Topic
+</span><span>    topic_to_merge_into = np.</span><span style="color:#bf616a;">argmax</span><span>(similarities[topic_to_merge + </span><span style="color:#d08770;">1</span><span>]) - </span><span style="color:#d08770;">1
+</span><span>
+</span><span>    </span><span style="color:#65737e;"># Adjust topics
+</span><span>    docs_df.loc[docs_df.Topic == topic_to_merge, &quot;</span><span style="color:#a3be8c;">Topic</span><span>&quot;] = topic_to_merge_into
+</span><span>    old_topics = docs_df.</span><span style="color:#bf616a;">sort_values</span><span>(&quot;</span><span style="color:#a3be8c;">Topic</span><span>&quot;).Topic.</span><span style="color:#bf616a;">unique</span><span>()
+</span><span>    map_topics = {old_topic: index - </span><span style="color:#d08770;">1 </span><span style="color:#b48ead;">for </span><span>index, old_topic </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">enumerate</span><span>(old_topics)}
+</span><span>    docs_df.Topic = docs_df.Topic.</span><span style="color:#bf616a;">map</span><span>(map_topics)
+</span><span>    docs_per_topic = docs_df.</span><span style="color:#bf616a;">groupby</span><span>([&#39;</span><span style="color:#a3be8c;">Topic</span><span>&#39;], </span><span style="color:#bf616a;">as_index </span><span>= </span><span style="color:#d08770;">False</span><span>).</span><span style="color:#bf616a;">agg</span><span>({&#39;</span><span style="color:#a3be8c;">Doc</span><span>&#39;: &#39; &#39;.join})
+</span><span>
+</span><span>    </span><span style="color:#65737e;"># Calculate new topic words
+</span><span>    m = </span><span style="color:#96b5b4;">len</span><span>(data)
+</span><span>    tf_idf, count = </span><span style="color:#bf616a;">c_tf_idf</span><span>(docs_per_topic.Doc.values, m)
+</span><span>    top_n_words = </span><span style="color:#bf616a;">extract_top_n_words_per_topic</span><span>(tf_idf, count, docs_per_topic, </span><span style="color:#bf616a;">n</span><span>=</span><span style="color:#d08770;">20</span><span>)
+</span><span>
+</span><span>topic_sizes = </span><span style="color:#bf616a;">extract_topic_sizes</span><span>(docs_df); topic_sizes.</span><span style="color:#bf616a;">head</span><span>(</span><span style="color:#d08770;">10</span><span>)
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>top_n_words[</span><span style="color:#d08770;">51</span><span>][:</span><span style="color:#d08770;">10</span><span>]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[(&#39;trump&#39;, 0.10467902584887456),
+</span><span> (&#39;president&#39;, 0.06072602666892069),
+</span><span> (&#39;2020&#39;, 0.03411193922678639),
+</span><span> (&#39;america&#39;, 0.03269916901768407),
+</span><span> (&#39;democratic&#39;, 0.032277888078611434),
+</span><span> (&#39;donald&#39;, 0.029263497562009327),
+</span><span> (&#39;democrats&#39;, 0.0268655653148694),
+</span><span> (&#39;election&#39;, 0.02609372385412432),
+</span><span> (&#39;presidential&#39;, 0.025912575696792114),
+</span><span> (&#39;bernie&#39;, 0.025237479236590536)]
+</span></code></pre>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>top_n_words[</span><span style="color:#d08770;">50</span><span>][:</span><span style="color:#d08770;">10</span><span>]
+</span></code></pre>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>[(&#39;don&#39;, 0.03970939022232294),
+</span><span> (&#39;people&#39;, 0.03339189616992504),
+</span><span> (&#39;anxiety&#39;, 0.03049151218674598),
+</span><span> (&#39;life&#39;, 0.023705264451986674),
+</span><span> (&#39;mental&#39;, 0.023679815071311398),
+</span><span> (&#39;doesn&#39;, 0.02318471421412793),
+</span><span> (&#39;disorder&#39;, 0.02080708641397244),
+</span><span> (&#39;need&#39;, 0.01934262579411308),
+</span><span> (&#39;like&#39;, 0.01924398264657584),
+</span><span> (&#39;just&#39;, 0.019145351423775627)]
+</span></code></pre>
+
+
+    </div>
+  </section>
+</body>
+
+</html>

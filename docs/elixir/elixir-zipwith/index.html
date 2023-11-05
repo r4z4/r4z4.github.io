@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Utilizing the ```Enum.zip_with&#x2F;3``` Function
+</h1>
+<p class="subtitle"><strong>2023-08-16</strong></p>
+<hr />
+<p>One thing that is worth mentioning for people who might find themselves going back and forth with projects, or even languages, is the use of Enum when you might just think to reach for the List module. The Enum module provides many useful methods, but I just always find myself looking for them first in the List module. Because lists are implemented as linked data structures, they’re good for recursion, but bad for randomly retrieving an element or even figuring out the length because you’d need to traverse the whole list to figure out the size. </p>
+<hr />
+<p>I think I finally accepted the Enum module superiority though when I finally came across the <a href="https://hexdocs.pm/elixir/1.12/Enum.html#zip_with/3">zip_with</a>. At this point in my life I think I am actively avoiding anything Haskell, but I guess we can give this one a pass. This is a common method used in Haskell and it has also proven useful to me in Elixir. I am usually finding myself, for whatever reason, with equal length lists depicting various aspects of the system In a pairwise fashion. For example, when gathering data for users to compile into some useful statistics, I can neatly separate them into different lists, and then we can perform operations on them as so:</p>
+<hr />
+<p>I have gone back and forth enough times now to finally realize there are times when you may need it in both forms. At first, I’d just gather the data as [name, score, id], [name, score, id] … and we can simply map over that. But there are other times when having the lists separate is helpful (especially for display purposes). In that case, we gather the data in this form and we have three separate lists of <code>[name, name …]</code>, <code>[score, score …]</code>. <code>[id, id …]</code> – each of equal length.</p>
+<hr />
+<p>From the Elixir docs:
+&gt;It's important to remember that zipping inherently relies on order. If you zip two lists you get the element at the index from each list in turn.</p>
+<p>It is also worth noting that there are other considerations here, too. For example, having the data in a list does not allow us to access them by key etc.. Just another case of “you need to carefully plan out your data structures”.
+In this case I just have separate lists of strings which likely won’t illustrate most of the useful of the feature, but even here it can make things a little easier for us. One pretty common thing to do is to alter the display based on certain criteria – let’s say that if it is the person themselves in that list, we want to highlight that. Rather than going back and having to restructure our query to get all that user data in one row, we can perform a zip_with operation and achieve the same result. It might seem like a rather contrived example but I have found myself here a few times before 😊.</p>
+<hr />
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>  prop leader_names, </span><span style="color:#a3be8c;">:list
+</span><span>  prop leader_scores, </span><span style="color:#a3be8c;">:list
+</span><span>  prop leader_ids, </span><span style="color:#a3be8c;">:list
+</span></code></pre>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>    leader_names = </span><span style="color:#ebcb8b;">Enum</span><span>.map(leader_list, </span><span style="color:#b48ead;">fn</span><span> item -&gt; </span><span style="color:#ebcb8b;">List</span><span>.first(item) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>    leader_scores = </span><span style="color:#ebcb8b;">Enum</span><span>.map(leader_list, </span><span style="color:#b48ead;">fn</span><span> item -&gt; </span><span style="color:#ebcb8b;">List</span><span>.last(item) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>    leader_ids = </span><span style="color:#ebcb8b;">Enum</span><span>.map(leader_list, </span><span style="color:#b48ead;">fn</span><span> item -&gt; </span><span style="color:#ebcb8b;">List</span><span>.pop_at(item, </span><span style="color:#d08770;">1</span><span>) |&gt; </span><span style="color:#ebcb8b;">Kernel</span><span>.elem(</span><span style="color:#d08770;">0</span><span>) </span><span style="color:#b48ead;">end</span><span>)
+</span><span>
+</span><span>    zipped = </span><span style="color:#ebcb8b;">Enum</span><span>.zip_with(leader_ids, leader_scores, </span><span style="color:#b48ead;">fn</span><span> x,y -&gt; &#39;</span><span style="color:#a3be8c;">#{</span><span>x}</span><span style="color:#a3be8c;">--#{</span><span>y}&#39; </span><span style="color:#b48ead;">end</span><span>)
+</span></code></pre>
+<pre data-lang="shell-session" style="background-color:#2b303b;color:#c0c5ce;" class="language-shell-session "><code class="language-shell-session" data-lang="shell-session"><span>zipped: [&#39;1--2200&#39;, &#39;5--2200&#39;, &#39;9--2200&#39;, &#39;2--2150&#39;, &#39;13--2150&#39;, &#39;6--1950&#39;, &#39;10--1950&#39;, &#39;14--1450&#39;, &#39;11--1350&#39;, &#39;7--1350&#39;]
+</span></code></pre>
+
+
+    </div>
+  </section>
+</body>
+
+</html>
