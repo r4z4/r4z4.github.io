@@ -27,6 +27,10 @@ Here is our starting point after the first command (plus one or test commands fr
 
 ## Creating the templates
 
+One of the more mundane and boilerplate steps in setting up a simple web app is getting the frontend in place. Even a relatively simple solution comes with its own set of issues and complications. 
+For whatever reason I choose to use Handlebars and would like to explore some other options but for now this should do. It has been around for some time so I am assuming that aider - ChatGPT - will 
+be able to pick up any sort of general instructions it has for getting started. Let's see if we can automate this part of it, at least a little bit.
+
 ```bash
     src/config.rs src/main.rs
     > Create a directory in the root directory titled templates (./templates) and inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
@@ -53,7 +57,7 @@ Here is our starting point after the first command (plus one or test commands fr
     Applied edit to ./templates/homepage.hbs
 ```
 
-It did freeze after that which was a little disheartening but file was created. It is also added to the chat history as well. (which if you don’t need, you can remove with ```/drop <filepath>```
+It did freeze after that which was a little disheartening but file was created. It is also added to the chat history as well. (which if you don’t need, you can remove with ```/drop <filepath>```)
 
 One useful tip from the site in this regards though is:
 > Use Control-C to safely interrupt GPT if it isn’t providing a useful response. The partial response remains in the conversation, so you can refer to it when you reply to GPT with more information or direction.
@@ -66,6 +70,8 @@ It does seem to be the one place there is a real lack of progress or status aler
 
 ## Getting a Review
 
+Perhaps the most practical usage for an app like this might be to just have it scan what you have put together and provide a code review. This can also be a summary or likely some form of doc generation as well.
+I was curious to see how aider would perform here, and this was one area where it did seem to struggle a bit, but note that this could very well be my lack of prompting skills and/or effort.
 
 ```bash
 
@@ -122,6 +128,36 @@ will be inserted when rendering the template.
 Applied edit to templates/homepage.hbs
 No changes made to git tracked files.
 ```
+
+Also worth noting is the size of the context window, which for now is relatively small. Here is an attempt to use a file that was about 700 lines. I suppose many of your files might be much less
+than that but all files in the history do combine to a total, so it is just another thing to be aware of when planning out how to use the tool.
+
+```bash
+examples/main.rs
+Add these files to the chat? y
+The chat session is larger than the context window!
+
+Approximate context window usage, in tokens:
+
+$ 0.00      306 system messages
+$ 0.00      250 chat history     use /clear to clear
+$ 0.01    5,642 examples/main.rs use /drop to drop from chat
+$ 0.00      243 src/main.rs      use /drop to drop from chat
+================
+$ 0.01    6,441 tokens total
+         -2,345 tokens remaining, window exhausted!
+          4,096 tokens max context window size
+
+To reduce token usage:
+ - Use /drop to remove unneeded files from the chat session.
+ - Use /clear to clear chat history.
+```
+
+Aider does provide some useful tips in this area as well:
+> Think about which files need to be edited to make your change and add them to the chat. Aider has some ability to help GPT figure out which files to edit all by itself, but the most effective approach is to explicitly add the needed files to the chat yourself.
+> Large changes are best performed as a sequence of thoughtful bite sized steps, where you plan out the approach and overall design. Walk GPT through changes like you might with a junior dev. Ask for a refactor to prepare, then ask for the actual change. Spend the time to ask for code quality/structure improvements.
+
+I should probably take a little time to try fine tuning my prompts a little bit.
 
 ---
 

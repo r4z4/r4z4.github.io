@@ -27,8 +27,11 @@
 <p><img src="/images/llms/aider_cost_1.png#md-img-hor" alt="png" /></p>
 <hr />
 <h2 id="creating-the-templates">Creating the templates</h2>
+<p>One of the more mundane and boilerplate steps in setting up a simple web app is getting the frontend in place. Even a relatively simple solution comes with its own set of issues and complications. 
+For whatever reason I choose to use Handlebars and would like to explore some other options but for now this should do. It has been around for some time so I am assuming that aider - ChatGPT - will 
+be able to pick up any sort of general instructions it has for getting started. Let's see if we can automate this part of it, at least a little bit.</p>
 <pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>    </span><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
-</span><span>    &gt; Create </span><span style="color:#bf616a;">a</span><span> directory in the root directory titled templated (./templates) </span><span style="color:#bf616a;">and</span><span> inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
+</span><span>    &gt; Create </span><span style="color:#bf616a;">a</span><span> directory in the root directory titled templates (./templates) </span><span style="color:#bf616a;">and</span><span> inside of that create a file called homepage.hbs that will be the main layout page for handlebars template engine. 
 </span><span>    </span><span style="color:#bf616a;">Inside</span><span> of the ./templates/homepage.hbs file, create a basic handlebars layout file with a basic HTML page.
 </span><span>
 </span><span>    </span><span style="color:#bf616a;">To</span><span> create the ./templates/homepage.hbs file with a basic handlebars layout, you can use the following content:
@@ -51,7 +54,7 @@
 </span><span>    </span><span style="color:#bf616a;">Allow</span><span> creation of new file ./templates/homepage.hbs? y
 </span><span>    </span><span style="color:#bf616a;">Applied</span><span> edit to ./templates/homepage.hbs
 </span></code></pre>
-<p>It did freeze after that which was a little disheartening but file was created. It is also added to the chat history as well. (which if you don’t need, you can remove with <code>/drop &lt;filepath&gt;</code></p>
+<p>It did freeze after that which was a little disheartening but file was created. It is also added to the chat history as well. (which if you don’t need, you can remove with <code>/drop &lt;filepath&gt;</code>)</p>
 <p>One useful tip from the site in this regards though is:</p>
 <blockquote>
 <p>Use Control-C to safely interrupt GPT if it isn’t providing a useful response. The partial response remains in the conversation, so you can refer to it when you reply to GPT with more information or direction.</p>
@@ -60,6 +63,8 @@
 <img src="/images/llms/aider_screen.png#md-img-hor" alt="png" /></p>
 <hr />
 <h2 id="getting-a-review">Getting a Review</h2>
+<p>Perhaps the most practical usage for an app like this might be to just have it scan what you have put together and provide a code review. This can also be a summary or likely some form of doc generation as well.
+I was curious to see how aider would perform here, and this was one area where it did seem to struggle a bit, but note that this could very well be my lack of prompting skills and/or effort.</p>
 <pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span>
 </span><span style="color:#bf616a;">src/config.rs</span><span> src/main.rs
 </span><span>&gt; Please </span><span style="color:#bf616a;">review</span><span> lines between the comments Begin review and End review in the file `</span><span style="color:#bf616a;">src/config.rs</span><span>` and make changes to t
@@ -102,6 +107,33 @@
 </span><span style="color:#bf616a;">Applied</span><span> edit to templates/homepage.hbs
 </span><span style="color:#bf616a;">No</span><span> changes made to git tracked files.
 </span></code></pre>
+<p>Also worth noting is the size of the context window, which for now is relatively small. Here is an attempt to use a file that was about 700 lines. I suppose many of your files might be much less
+than that but all files in the history do combine to a total, so it is just another thing to be aware of when planning out how to use the tool.</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">examples/main.rs
+</span><span style="color:#bf616a;">Add</span><span> these files to the chat? y
+</span><span style="color:#bf616a;">The</span><span> chat session is larger than the context window!
+</span><span>
+</span><span style="color:#bf616a;">Approximate</span><span> context window usage, in tokens:
+</span><span>
+</span><span style="color:#bf616a;">$</span><span> 0.00      306 system messages
+</span><span style="color:#bf616a;">$</span><span> 0.00      250 chat history     use /clear to clear
+</span><span style="color:#bf616a;">$</span><span> 0.01    5,642 examples/main.rs use /drop to drop from chat
+</span><span style="color:#bf616a;">$</span><span> 0.00      243 src/main.rs      use /drop to drop from chat
+</span><span>=</span><span style="color:#a3be8c;">===============
+</span><span style="color:#bf616a;">$</span><span> 0.01    6,441 tokens total
+</span><span>         </span><span style="color:#bf616a;">-2,345</span><span> tokens remaining, window exhausted!
+</span><span>          </span><span style="color:#bf616a;">4,096</span><span> tokens max context window size
+</span><span>
+</span><span style="color:#bf616a;">To</span><span> reduce token usage:
+</span><span> </span><span style="color:#bf616a;">-</span><span> Use /drop to remove unneeded files from the chat session.
+</span><span> </span><span style="color:#bf616a;">-</span><span> Use /clear to clear chat history.
+</span></code></pre>
+<p>Aider does provide some useful tips in this area as well:</p>
+<blockquote>
+<p>Think about which files need to be edited to make your change and add them to the chat. Aider has some ability to help GPT figure out which files to edit all by itself, but the most effective approach is to explicitly add the needed files to the chat yourself.
+Large changes are best performed as a sequence of thoughtful bite sized steps, where you plan out the approach and overall design. Walk GPT through changes like you might with a junior dev. Ask for a refactor to prepare, then ask for the actual change. Spend the time to ask for code quality/structure improvements.</p>
+</blockquote>
+<p>I should probably take a little time to try fine tuning my prompts a little bit.</p>
 <hr />
 <h2 id="real-test">Real Test</h2>
 <p>Alright a real test now. See how well it adds a handlebars_helper file, adds a specific handler to that file, then adds the linkage that it needs in the main.rs file to be able to be used.</p>
