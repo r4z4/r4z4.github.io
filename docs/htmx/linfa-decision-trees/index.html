@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Decision Trees in Rust using the Linfa crate
+</h1>
+<p class="subtitle"><strong>2023-11-30</strong></p>
+<hr />
+<p>A little while back I came across the <a href="https://github.com/rust-ml/linfa">linfa crate</a>, which is one of the more data science libraries in the Rust ecosystem. Since then I have been toying around with it a bit, and the combination of the speed and the type safety made it a very pleasing experience to the point where I really needed to start to use it more in some of my projects.</p>
+<hr />
+<p>Before getting started it might be worth a very brief intro to Linfa, which is probably most easily done via the similarities to NumPy per the Rust docs...</p>
+<blockquote>
+<ul>
+<li>Arrays have a single element type.</li>
+<li>Arrays can have arbitrarily many dimensions.</li>
+<li>Arrays can have arbitrary strides.</li>
+<li>Indexing starts at zero, not one.</li>
+<li>The default memory layout is row-major, and the default iterators follow row-major order (also called “logical order” in the documentation).</li>
+<li>Arithmetic operators work elementwise. (For example, a * b performs elementwise multiplication, not matrix multiplication.)</li>
+<li>Owned arrays are contiguous in memory.</li>
+<li>Many operations, such as slicing, are very cheap because they can return a view of an array instead of copying the data.</li>
+</ul>
+</blockquote>
+<hr />
+<p>Of course there are some differences that will come up, mostly dealing with the Rust type system and its handling of generics with the ArrayBase type, as well as some slight variations on the methodology of the slice() method. None of these play a direct role in the decision trees we are creating here. Now, onto our example.</p>
+<hr />
+<p>Admittedly this is one of those solutions finding a problem scenarios, but I was able to generate a little workflow that utilizes the linfa-trees crate to compose a Decision Tree model from current database data, and then make a prediction on user submitted form data which is sent in to represent a new event (in this case it is a meeting/consult).</p>
+<hr />
+<p>The basic idea is what we would assume we are setting something up to where we want the model to predict the user (here it is a consultant type) to assign to the meeting. We can fix up our data to have it predict on the optimal case, and then we can use the model’s prediction for that model data to get our desired output. In terms of the actual value that we get from this particular case is really nothing to write home about, but it certainly illustrates the power of linfa, and the ease of introducing it into your projects.</p>
+<hr />
+<p>With all that said, the first step in all of this is to get our current data, stored in our Postgres DB, into the form that we need for the Dataset. Here is our code to get the data from the database, and convert it into an Array2 struct that linfa can work with:</p>
+<hr />
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span>async </span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">build_model_ndarray</span><span>(</span><span style="color:#bf616a;">db</span><span>: &amp;Pool&lt;Postgres&gt;) -&gt; Result&lt;Array2&lt;</span><span style="color:#b48ead;">f32</span><span>&gt;, String&gt; {
+</span><span>    </span><span style="color:#b48ead;">match </span><span>sqlx::query_as::&lt;_, ModelData&gt;(
+</span><span>        &quot;</span><span style="color:#a3be8c;">SELECT consult_purpose_id, client_type_id, consults.client_id, clients.specialty_id, clients.territory_id, location_id, notes, consult_result_id, num_attendees, consult_start, consult_end
+</span><span style="color:#a3be8c;">                FROM consults INNER JOIN clients ON consults.client_id = clients.id WHERE consult_end &lt; now()</span><span>&quot;,
+</span><span>    )
+</span><span>    .</span><span style="color:#96b5b4;">fetch_all</span><span>(db)
+</span><span>    .await
+</span><span>    {
+</span><span>        Ok(model_data) =&gt; {
+</span><span>            </span><span style="color:#b48ead;">let</span><span> built_arr: Array2&lt;</span><span style="color:#b48ead;">f32</span><span>&gt; = model_data.</span><span style="color:#96b5b4;">iter</span><span>()
+</span><span>                .</span><span style="color:#96b5b4;">map</span><span>(|</span><span style="color:#bf616a;">row</span><span>| row.</span><span style="color:#96b5b4;">as_f32array</span><span>())
+</span><span>                .collect::&lt;Vec&lt;_&gt;&gt;()
+</span><span>                .</span><span style="color:#96b5b4;">into</span><span>();
+</span><span>            Ok(built_arr)
+</span><span>        },
+</span><span>        Err(e) =&gt; Err(format!(&quot;</span><span style="color:#a3be8c;">Error in DB </span><span style="color:#d08770;">{}</span><span>&quot;, e).</span><span style="color:#96b5b4;">to_string</span><span>())
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<hr />
+<p>From there, one of the key pieces that we need to implement ourselves is to make sure that we can convert all of this data into the <code>Array2&lt;f32&gt;</code> that linfa needs. This whole step is really where the type safety (&amp; rust-analyzer) is there as a nice backstop. </p>
+<hr />
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">impl </span><span>LinfaPredictionInput {
+</span><span>    </span><span style="color:#b48ead;">pub fn </span><span style="color:#8fa1b3;">as_ndarray</span><span>(&amp;</span><span style="color:#bf616a;">self</span><span>) -&gt; ArrayBase&lt;OwnedRepr&lt;</span><span style="color:#b48ead;">f32</span><span>&gt;, Dim&lt;[</span><span style="color:#b48ead;">usize</span><span>; </span><span style="color:#d08770;">2</span><span>]&gt;&gt; {
+</span><span>        array!([
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.consult_purpose_id as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.client_id as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.client_type as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.specialty_id as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.territory_id as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.location_id as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.notes_length as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.meeting_duration as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.hour_of_day as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.received_follow_up as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>            </span><span style="color:#bf616a;">self</span><span>.num_attendees as </span><span style="color:#b48ead;">f32</span><span>,
+</span><span>        ])
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<hr />
+<p>We can then put these pieces together into the main linda_predict function that will do the actual prediction.</p>
+<hr />
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="color:#b48ead;">pub</span><span> async </span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">linfa_pred</span><span>(</span><span style="color:#bf616a;">input</span><span>: &amp;LinfaPredictionInput, </span><span style="color:#bf616a;">pool</span><span>: &amp;Pool&lt;Postgres&gt;) -&gt; LinfaPredictionResult {
+</span><span style="color:#b48ead;">let</span><span> built_arr: Array2&lt;</span><span style="color:#b48ead;">f32</span><span>&gt; = </span><span style="color:#96b5b4;">build_model_ndarray</span><span>(pool).await.</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span><span>    dbg!(&amp;built_arr);
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> feature_names = vec![
+</span><span>        &quot;</span><span style="color:#a3be8c;">consult_purpose_id</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">client_type</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">client_id</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">specialty_id</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">territory_id</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">location_id</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">notes_length</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">meeting_duration</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">hour_of_day</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">received_follow_up</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">num_attendees</span><span>&quot;,
+</span><span>        &quot;</span><span style="color:#a3be8c;">consultant_id</span><span>&quot;,
+</span><span>    ];
+</span><span>    </span><span style="color:#b48ead;">let</span><span> num_features = built_arr.</span><span style="color:#96b5b4;">len_of</span><span>(Axis(</span><span style="color:#d08770;">1</span><span>)) - </span><span style="color:#d08770;">1</span><span>;
+</span><span>    </span><span style="color:#b48ead;">let</span><span> features = built_arr.</span><span style="color:#96b5b4;">slice</span><span>(s![.., </span><span style="color:#d08770;">0</span><span>..num_features]).</span><span style="color:#96b5b4;">to_owned</span><span>();
+</span><span>    </span><span style="color:#b48ead;">let</span><span> labels = built_arr.</span><span style="color:#96b5b4;">column</span><span>(num_features).</span><span style="color:#96b5b4;">to_owned</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> linfa_dataset = Dataset::new(features, labels)
+</span><span>        .</span><span style="color:#96b5b4;">map_targets</span><span>(|</span><span style="color:#bf616a;">x</span><span>| </span><span style="color:#b48ead;">match</span><span> x.</span><span style="color:#96b5b4;">to_owned</span><span>() as </span><span style="color:#b48ead;">i32 </span><span>{
+</span><span>            </span><span style="color:#d08770;">1 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Hulk Hogan</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">2 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Mike</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">3 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Zardos</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">4 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Greg</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">5 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Rob</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">6 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Vanessa</span><span>&quot;,
+</span><span>            </span><span style="color:#d08770;">7 </span><span>=&gt; &quot;</span><span style="color:#a3be8c;">Joe</span><span>&quot;,
+</span><span>            _ =&gt; &quot;</span><span style="color:#a3be8c;">Nobody</span><span>&quot;,
+</span><span>        })
+</span><span>        .</span><span style="color:#96b5b4;">with_feature_names</span><span>(feature_names);
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> model = DecisionTree::params()
+</span><span>        .</span><span style="color:#96b5b4;">split_quality</span><span>(SplitQuality::Gini)
+</span><span>        .</span><span style="color:#96b5b4;">fit</span><span>(&amp;linfa_dataset)
+</span><span>        .</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#b48ead;">let</span><span> input: Array2&lt;</span><span style="color:#b48ead;">f32</span><span>&gt; = input.</span><span style="color:#96b5b4;">as_ndarray</span><span>();
+</span><span>    </span><span style="color:#b48ead;">let</span><span> predictions = model.</span><span style="color:#96b5b4;">predict</span><span>(&amp;input);
+</span><span>
+</span><span>    </span><span style="color:#65737e;">// Map back to int. FIXME
+</span><span>    </span><span style="color:#b48ead;">let</span><span> pred = predictions[</span><span style="color:#d08770;">0</span><span>];
+</span><span>    </span><span style="color:#b48ead;">let</span><span> consultant_id =
+</span><span>        </span><span style="color:#b48ead;">match</span><span> pred {
+</span><span>            &quot;</span><span style="color:#a3be8c;">Hulk Hogan</span><span>&quot; =&gt; </span><span style="color:#d08770;">1</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Mike</span><span>&quot; =&gt; </span><span style="color:#d08770;">2</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Zardos</span><span>&quot; =&gt; </span><span style="color:#d08770;">3</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Greg</span><span>&quot; =&gt; </span><span style="color:#d08770;">4</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Rob</span><span>&quot; =&gt; </span><span style="color:#d08770;">5</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Vanessa</span><span>&quot; =&gt; </span><span style="color:#d08770;">6</span><span>,
+</span><span>            &quot;</span><span style="color:#a3be8c;">Joe</span><span>&quot; =&gt; </span><span style="color:#d08770;">7</span><span>,
+</span><span>            _ =&gt; </span><span style="color:#d08770;">0</span><span>,
+</span><span>        };
+</span><span>
+</span><span>    </span><span style="color:#65737e;">// Create Decision Tree file for each generation for audit/review/records. FIXME: Export to Storage (GCP)
+</span><span>    </span><span style="color:#b48ead;">let</span><span> path = &quot;</span><span style="color:#a3be8c;">./static/linfa/consults/</span><span>&quot;;
+</span><span>    </span><span style="color:#b48ead;">let</span><span> filename = Uuid::new_v4().</span><span style="color:#96b5b4;">to_string</span><span>();
+</span><span>    </span><span style="color:#b48ead;">let</span><span> ext = &quot;</span><span style="color:#a3be8c;">.tex</span><span>&quot;;
+</span><span>    File::create(format!(&quot;</span><span style="color:#d08770;">{}{}{}</span><span>&quot;, path, filename, ext))
+</span><span>        .</span><span style="color:#96b5b4;">unwrap</span><span>()
+</span><span>        .</span><span style="color:#96b5b4;">write_all</span><span>(model.</span><span style="color:#96b5b4;">export_to_tikz</span><span>().</span><span style="color:#96b5b4;">with_legend</span><span>().</span><span style="color:#96b5b4;">to_string</span><span>().</span><span style="color:#96b5b4;">as_bytes</span><span>())
+</span><span>        .</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span><span>
+</span><span>    </span><span style="color:#65737e;">// return tuple struct (filename_uuid, consultant_id)
+</span><span>    LinfaPredictionResult(filename, consultant_id)
+</span><span>}
+</span></code></pre>
+<hr />
+<p>If we focus in on the last section here, this is one more critical pieces to the reason why the ability to utilize this crate easily into your projects is so nice. If you have ever worked in an industry or setting where there is a strong need for evidence-based reasoning or proof-of-work, a leading document to be able to point back to is just something that many other algorithms and libraries can offer you. Decision tree libraries will likely always have this available of course, but when it combined with the power of Rust and the ease of use is really when things started to click.</p>
+<hr />
+<p>From here, it is simple to add the ability to generate a LaTeX document for the model that made the prediction. We can then generate a UUID for that file and save it back to the database to associate with the record that we just created. </p>
+<pre data-lang="rust" style="background-color:#2b303b;color:#c0c5ce;" class="language-rust "><code class="language-rust" data-lang="rust"><span>    File::create(format!(&quot;</span><span style="color:#d08770;">{}{}{}</span><span>&quot;, path, filename, ext))
+</span><span>        .</span><span style="color:#96b5b4;">unwrap</span><span>()
+</span><span>        .</span><span style="color:#96b5b4;">write_all</span><span>(model.</span><span style="color:#96b5b4;">export_to_tikz</span><span>().</span><span style="color:#96b5b4;">with_legend</span><span>().</span><span style="color:#96b5b4;">to_string</span><span>().</span><span style="color:#96b5b4;">as_bytes</span><span>())
+</span><span>        .</span><span style="color:#96b5b4;">unwrap</span><span>();
+</span></code></pre>
+<hr />
+<p>Here is an example of our TKV file, which can be converted to a PDF file pretty simply using readily available tools depending on your operating system. For myself operating in WSL it was as simple as:</p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">sudo</span><span> apt-get install texlive
+</span><span style="color:#bf616a;">pdflatex</span><span> /path/to/myfile.tex
+</span></code></pre>
+<p>I have cut off the entire left side of the tree here for brevity and for ease of viewing. The left half is largely the same just for the rest of the variables that you see in the legend.</p>
+<p><img src="/images/rust/linfa_decision_tree.png#md-img-hor" alt="png" /></p>
+<hr />
+<p>This is great for environments that require more of an explainable-AI-like approach. It does feel that the more that the LLM models progress, we get further away from the principals championed by the explainable-AI field.
+Our little toy example here, if it were to be applied, also deals with people and work assignments. It is easy to imagine a scenario where feelings might get hurt, work may be effected and even lives can change. Having a tree to walk back up to evaluate the decisions at each point would be a great tool to lean on in these cases where evidence-based models are required or warranted.</p>
+<hr />
+<p>As a final note, this is still a rather raw version that can still use a little clean up. In particular I wanted to keep the map_targets() function in to show an easy way to put the result back in the same terms as the input, but of course that leads to the re-mapping that we need to do a little later on. For the sake of the application and how it is now, though, returning the name provides a better user experience. We will simply need to move this mapping elsewhere in the future. Maybe that will be the next post, although I am still diving into the linfa docs and seeing if there are some other algorithms that we can employ here with our toy scenarios.</p>
+
+
+    </div>
+  </section>
+</body>
+
+</html>
