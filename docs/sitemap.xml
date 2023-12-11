@@ -26,6 +26,10 @@
         <loc>https://r4z4.github.io/elixir/</loc>
     </url>
     <url>
+        <loc>https://r4z4.github.io/elixir/concurrency/</loc>
+        <lastmod>2023-12-08</lastmod>
+    </url>
+    <url>
         <loc>https://r4z4.github.io/elixir/elixir-benchmark/</loc>
         <lastmod>2023-08-01</lastmod>
     </url>

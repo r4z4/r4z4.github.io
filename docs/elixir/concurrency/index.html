@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://r4z4.github.io/global.css">
+  <title>Me</title>
+</head>
+
+<body>
+  <nav><ul><li><a href="https://r4z4.github.io">Home</a></li></ul></nav>
+  <section class="section">
+    <div class="container">
+      
+<h1 class="title">
+  Basic Concurrency in Elixir
+</h1>
+<p class="subtitle"><strong>2023-12-08</strong></p>
+<hr />
+<p>After having spent some time away from Elixir for a little bit and then returning to it, I found myself a little lost on certain things at first. It does differ just enough in some of the little things it feels like. With that said I felt it’d be a good idea to write up a little something to show the general benefits and ways of doing things in Elixir for my own benefit, should I find myself in a similar situation in the future, which I very much anticipate. Also, though, it seems many are still not quite yet familiar with some of those benefits, so a quick and concise little showcase might be a nice little thing to be able to point too as well. <a href="https://stream-handler-render-db.onrender.com/">You can view it here.</a></p>
+<hr />
+<p>So, with that said, it might make sense to describe the project. I just wanted to showcase how some of those basic concurrency primitives like spawn, send &amp; receive can be used in implementations like  GenServers to help you build highly-concurrent applications. The simplest thing I could think of was a dashboard-like UI with some buttons that’ll launch and stop some asynchronous services. We’ll also utilize Phoenix LiveView which’ll allow all of those updates to be automatically sent to the UI via the websocket connection.</p>
+<hr />
+<p>Even though the application is relatively simple, there are many steps that I found myself having to pause and consult some old materials or sample code to remember what it was I needed to do in certain situations. Some of the larger ideas like GenServers or Tasks are easy to remember and hang onto, but some of the little things like how to send the equivalent of an onClick() call when a button is clicked or how to define the structs.</p>
+<hr />
+<p>The good news here is that our simple application design will really just allow me to show the whole end-to-end flow for one of those services, and the rest is pretty much just that duplicated over and over, just being plugged into different services. All of them just utilize a GenServer process to complete their work and send back messages to the parent process (our LiveView) at each interval.</p>
+<hr />
+<p>Makes sense to start from the very beginning though. Navigating from home page to new page.  Sounds dumb but I stumbled here. Not proud to admit it, but … In my defense though it also was a bit of the overall template-like nature of LiveView and how the views interact with the controllers. </p>
+<hr />
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>&lt;.link href={</span><span style="color:#b48ead;">~p</span><span>&quot;</span><span style="color:#a3be8c;">/stream</span><span>&quot;}&gt;</span><span style="color:#ebcb8b;">Stream Page</span><span>&lt;/.link&gt;
+</span></code></pre>
+<p>&amp; then it clicked (no pun intended) that there was the router.ex module where we set all of these up.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>scope &quot;</span><span style="color:#a3be8c;">/</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamHandlerWeb </span><span style="color:#b48ead;">do
+</span><span>  pipe_through </span><span style="color:#a3be8c;">:browser
+</span><span>
+</span><span>  get &quot;</span><span style="color:#a3be8c;">/</span><span>&quot;, </span><span style="color:#ebcb8b;">PageController</span><span>, </span><span style="color:#a3be8c;">:home
+</span><span>
+</span><span>  live &quot;</span><span style="color:#a3be8c;">/stream</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamLive</span><span>.</span><span style="color:#ebcb8b;">Index</span><span>, </span><span style="color:#a3be8c;">:index
+</span><span>  live &quot;</span><span style="color:#a3be8c;">/stream/new</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamLive</span><span>.</span><span style="color:#ebcb8b;">Index</span><span>, </span><span style="color:#a3be8c;">:new
+</span><span>  live &quot;</span><span style="color:#a3be8c;">/stream/:id/edit</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamLive</span><span>.</span><span style="color:#ebcb8b;">Index</span><span>, </span><span style="color:#a3be8c;">:edit
+</span><span>
+</span><span>  live &quot;</span><span style="color:#a3be8c;">/stream/:id</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamLive</span><span>.</span><span style="color:#ebcb8b;">Show</span><span>, </span><span style="color:#a3be8c;">:show
+</span><span>  live &quot;</span><span style="color:#a3be8c;">/stream/:id/show/edit</span><span>&quot;, </span><span style="color:#ebcb8b;">StreamLive</span><span>.</span><span style="color:#ebcb8b;">Show</span><span>, </span><span style="color:#a3be8c;">:edit
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<hr />
+<p>The only route I am even using here is root and <code>/stream</code>, but just left the others for show. As you can see, when he hit the <code>/stream</code> route, that will be handled by the StreamLive.Index module. Since we have that new page now we can design a basic layout to get things started.</p>
+<pre data-lang="html" style="background-color:#2b303b;color:#c0c5ce;" class="language-html "><code class="language-html" data-lang="html"><span>&lt;.header&gt;
+</span><span>  Listing
+</span><span>&lt;/.header&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">div</span><span>&gt;&lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>    &lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">class</span><span>=&quot;</span><span style="color:#a3be8c;">h-56 border-black border-4 p-8</span><span>&quot;&gt;
+</span><span>      &lt;</span><span style="color:#bf616a;">button</span><span>&gt;Launch Service&lt;/</span><span style="color:#bf616a;">button</span><span>&gt;
+</span><span>    &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span><span>  &lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span></code></pre>
+<hr />
+<p>Just starting with a button that will be used to launch a service and an area to display the result. With that we can take a look at the StreamLive.Index module which will house all of the logic that will dictate what gets displayed here. This is really where things started to flood back to me. That mostly occurred because I saw this:</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">mount</span><span>(_params, _session, socket) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts “</span><span style="color:#ebcb8b;">Mounted</span><span>”
+</span><span>
+</span><span>  {</span><span style="color:#a3be8c;">:ok</span><span>,
+</span><span>    socket
+</span><span>    |&gt; assign(</span><span style="color:#a3be8c;">:state</span><span>, %{})
+</span><span>  }
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<hr />
+<p>Then you start to remember it all about the lifecycle &amp; the assigns. I'm not going to delve into the basic of those as I believe <a href="https://blog.appsignal.com/2022/06/14/a-guide-to-phoenix-liveview-assigns.html">others do a much better job at that</a>. I’ll touch briefly on each of the variations here just so that none of the concepts are undefined, but all in all they all work in a similar manner, which makes our job much easier. </p>
+<hr />
+<h4 id="apis">APIs</h4>
+<p>Perhaps the most common use case is simply reaching out to some third party service to get some data and then working with that in some manner, to again send it back via the GenServer. This is the pattern followed in the Emojis, Slugs and Activities cards but I decided I would show another version of one that I ended up not using, only because it includes the extra API key param and header, which you can simply omit if the API does not require them (as none of those others do). Here I am simply just sending that response right back after some decoding.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">defp </span><span style="color:#8fa1b3;">get_aq</span><span>() </span><span style="color:#b48ead;">do
+</span><span>  {</span><span style="color:#a3be8c;">:ok</span><span>, resp} =
+</span><span>    </span><span style="color:#ebcb8b;">Finch</span><span>.build(
+</span><span>      </span><span style="color:#a3be8c;">:get</span><span>,
+</span><span>      &quot;</span><span style="color:#a3be8c;">https://api.openaq.org/v1/locations?limit=100&amp;page=1&amp;offset=0&amp;sort=desc&amp;radius=1000&amp;city=ARAPAHOE&amp;order_by=lastUpdated&amp;dump_raw=false</span><span>&quot;,
+</span><span>      [{&quot;</span><span style="color:#a3be8c;">Accept</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">application/json</span><span>&quot;}, {&quot;</span><span style="color:#a3be8c;">X-API-Key</span><span>&quot;, </span><span style="color:#ebcb8b;">System</span><span>.fetch_env!(&quot;</span><span style="color:#a3be8c;">OPEN_AQ_KEY</span><span>&quot;)}]
+</span><span>      )
+</span><span>      |&gt; </span><span style="color:#ebcb8b;">Finch</span><span>.request(</span><span style="color:#ebcb8b;">StreamHandler</span><span>.</span><span style="color:#ebcb8b;">Finch</span><span>)
+</span><span>
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(resp, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Resp</span><span>&quot;)
+</span><span>  {</span><span style="color:#a3be8c;">:ok</span><span>, body} = </span><span style="color:#ebcb8b;">Jason</span><span>.decode(resp.body)
+</span><span>  body
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>So with our function written that will return us our data, we can set up the rest of the GenServer. This will be the flow that each of the other services will follow (some with slight variations).
+Our service is started when we click the start button, which casts a message to our GenServer. As you can see, later on the same thing happens for stopping the resource</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>&quot;</span><span style="color:#a3be8c;">3</span><span>&quot; -&gt;
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts &quot;</span><span style="color:#a3be8c;">Activities Casted</span><span>&quot;
+</span><span>  </span><span style="color:#ebcb8b;">GenServer</span><span>.cast </span><span style="color:#a3be8c;">:consumer_4</span><span>, {</span><span style="color:#a3be8c;">:fetch_resource</span><span>, </span><span style="color:#a3be8c;">:activities</span><span>}
+</span><span>&quot;</span><span style="color:#a3be8c;">12</span><span>&quot; -&gt;
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts &quot;</span><span style="color:#a3be8c;">Activities Stopped</span><span>&quot;
+</span><span>  </span><span style="color:#ebcb8b;">GenServer</span><span>.cast </span><span style="color:#a3be8c;">:consumer_4</span><span>, {</span><span style="color:#a3be8c;">:stop_resource</span><span>, </span><span style="color:#a3be8c;">:activities</span><span>}
+</span></code></pre>
+<p>So now we can look in the Producer module (what our <code>:consumer_4</code> is) to see how that <code>:fetch_resource</code> message is being handled. Since it is a casted message, it will be handled by the <code>handle_cast/2</code> method.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_cast</span><span>({</span><span style="color:#a3be8c;">:fetch_resource</span><span>, sym}, state) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">Process</span><span>.send_after(self(), sym, @</span><span style="color:#bf616a;">time_interval_ms</span><span>)
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts(sym)
+</span><span>  {</span><span style="color:#a3be8c;">:noreply</span><span>, state}
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p><code>handle_cast/2</code> will handle all our the external messages that get casted to the GenServer. When it receives one of those that matches our message, it then sends itself another message after a certain interval, which will be handled by a different method, <code>handle_info/2</code>. Since Producer module has many different services, we need to find the one that matches the <code>sym</code> variable, which here is <code>:activities</code>.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_info</span><span>(</span><span style="color:#a3be8c;">:activities</span><span>, state) </span><span style="color:#b48ead;">do
+</span><span>  activities_ref = </span><span style="color:#ebcb8b;">Process</span><span>.send_after(self(), </span><span style="color:#a3be8c;">:activities</span><span>, @</span><span style="color:#bf616a;">call_interval_ms</span><span>)
+</span><span>  body = get_activities()
+</span><span>  activity =
+</span><span>    </span><span style="color:#b48ead;">case </span><span style="color:#ebcb8b;">Map</span><span>.fetch(body, &quot;</span><span style="color:#a3be8c;">activity</span><span>&quot;) </span><span style="color:#b48ead;">do
+</span><span>      {</span><span style="color:#a3be8c;">:ok</span><span>, str} -&gt; str
+</span><span>      </span><span style="color:#a3be8c;">:error </span><span>-&gt; &quot;</span><span style="color:#a3be8c;">No Activity</span><span>&quot;
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>  type =
+</span><span>    </span><span style="color:#b48ead;">case </span><span style="color:#ebcb8b;">Map</span><span>.fetch(body, &quot;</span><span style="color:#a3be8c;">type</span><span>&quot;) </span><span style="color:#b48ead;">do
+</span><span>      {</span><span style="color:#a3be8c;">:ok</span><span>, str} -&gt; str
+</span><span>      </span><span style="color:#a3be8c;">:error </span><span>-&gt; &quot;</span><span style="color:#a3be8c;">No Type</span><span>&quot;
+</span><span>    </span><span style="color:#b48ead;">end
+</span><span>  display = %{</span><span style="color:#d08770;">activity:</span><span> activity, </span><span style="color:#d08770;">type:</span><span> type}
+</span><span>  </span><span style="color:#ebcb8b;">Phoenix</span><span>.</span><span style="color:#ebcb8b;">PubSub</span><span>.broadcast(
+</span><span>    </span><span style="color:#ebcb8b;">StreamHandler</span><span>.</span><span style="color:#ebcb8b;">PubSub</span><span>,
+</span><span>    @</span><span style="color:#bf616a;">activities</span><span>,
+</span><span>    %{</span><span style="color:#d08770;">topic: </span><span>@</span><span style="color:#bf616a;">activities</span><span>, </span><span style="color:#d08770;">payload:</span><span> %{</span><span style="color:#d08770;">status: </span><span style="color:#a3be8c;">:complete</span><span>, </span><span style="color:#d08770;">data:</span><span> display, </span><span style="color:#d08770;">text: </span><span>&quot;</span><span style="color:#a3be8c;">Activities has completed.</span><span>&quot;}}
+</span><span>  )
+</span><span>  state = </span><span style="color:#ebcb8b;">Map</span><span>.put(state, </span><span style="color:#a3be8c;">:activities_ref</span><span>, activities_ref)
+</span><span>  {</span><span style="color:#a3be8c;">:noreply</span><span>, state}
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>The message is received, we call our <code>get_activities/0</code> function which returns a body of activities data. We need to manipulate that a tiny bit to clean it up, and then we can send it through the <a href="https://hexdocs.pm/phoenix_pubsub/Phoenix.PubSub.html">PubSub</a> mechanism where we have subscribed to each process. In a very similar manner, this is a message that gets passed, pattern matched on in the LiveView module - <code>Index.ex</code> - and then displayed.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_info</span><span>(%{</span><span style="color:#d08770;">topic: </span><span>@</span><span style="color:#bf616a;">activities</span><span>, </span><span style="color:#d08770;">payload:</span><span> msg}, socket) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(socket)
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(msg, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Msg</span><span>&quot;)
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts &quot;</span><span style="color:#a3be8c;">Handle Broadcast for Activities</span><span>&quot;
+</span><span>  {</span><span style="color:#a3be8c;">:noreply</span><span>,
+</span><span>    socket
+</span><span>    |&gt; assign(</span><span style="color:#a3be8c;">:activities</span><span>, msg[</span><span style="color:#a3be8c;">:data</span><span>])
+</span><span>  }
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>That assigns at the end is what will be picked up in our <code>index.html.heex</code> template file, like so:</p>
+<pre data-lang="html" style="background-color:#2b303b;color:#c0c5ce;" class="language-html "><code class="language-html" data-lang="html"><span>&lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">class</span><span>=</span><span style="color:#a3be8c;">{get_class(@clicked_map, </span><span style="color:#d08770;">3)}</span><span>&gt;
+</span><span>  &lt;</span><span style="color:#bf616a;">StreamHandlerWeb.DashboardComponents.activities_card </span><span style="color:#d08770;">activities</span><span>=</span><span style="color:#a3be8c;">{@activities} </span><span>/&gt;
+</span><span>&lt;/</span><span style="color:#bf616a;">div</span><span>&gt;
+</span></code></pre>
+<p>... which is just one div in our grid of nine.
+That pretty much does it. Each of those @interval values that we set a new message will be sent and the process will repeat itself. Now we can look at some of the other pieces and how they may differ ever so slightly.</p>
+<hr />
+<h4 id="ets">ETS</h4>
+<p>Erlang Term Storage is an in-memory storage option similar to Redis for those familiar. Similar to Redis, it provides solutions to things like caching and easy data access, which are among two of the more common use cases. Here, we will simply be using it a hold our user_score data to resemble a leaderboard. Our initial values will come from the DB, and then they will be updated each round (to simulate some game play) and then the scores will be recalculated, resorted and send back via the GenServer so that we can display it however. For this one, we are using a simple HTML table. </p>
+<p>If this were a production scenario, we would need to design some synchronization mechanisms to ensure that the scores are being persisted in the database in a timely manner.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">get_user_scores </span><span style="color:#b48ead;">do
+</span><span style="color:#65737e;">  # ms = :ets.fun2ms fn {score, username, joined} -&gt; {score, username, joined} end
+</span><span>  tuples = </span><span style="color:#a3be8c;">:ets</span><span>.tab2list(</span><span style="color:#a3be8c;">:user_scores</span><span>)
+</span><span>  user_scores =
+</span><span>    </span><span style="color:#ebcb8b;">Enum</span><span>.map(tuples, </span><span style="color:#b48ead;">fn </span><span>{username, score, joined} -&gt;
+</span><span>      %</span><span style="color:#ebcb8b;">UserScore</span><span>{</span><span style="color:#d08770;">username:</span><span> username, </span><span style="color:#d08770;">score:</span><span> score, </span><span style="color:#d08770;">joined:</span><span> joined}
+</span><span>    </span><span style="color:#b48ead;">end</span><span>)
+</span><span>  user_scores
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>In a similar manner, then, we relay that through. </p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_info</span><span>(</span><span style="color:#a3be8c;">:ets</span><span>, state) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts &quot;</span><span style="color:#a3be8c;">Handle ETS</span><span>&quot;
+</span><span>  scores = get_user_scores()
+</span><span>  shuffle_user_scores(scores)
+</span><span>  sorted = </span><span style="color:#ebcb8b;">Enum</span><span>.sort_by(scores, &amp;(&amp;</span><span style="color:#d08770;">1</span><span>.score), </span><span style="color:#a3be8c;">:desc</span><span>)
+</span><span>  publish_str(@</span><span style="color:#bf616a;">ets</span><span>, sorted)
+</span><span>  ets_ref = </span><span style="color:#ebcb8b;">Process</span><span>.send_after(self(), </span><span style="color:#a3be8c;">:ets</span><span>, @</span><span style="color:#bf616a;">time_interval_ms</span><span>)
+</span><span>  state = </span><span style="color:#ebcb8b;">Map</span><span>.put(state, </span><span style="color:#a3be8c;">:ets_ref</span><span>, ets_ref)
+</span><span>  {</span><span style="color:#a3be8c;">:noreply</span><span>, state}
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>One additional step to note here is the ets_ref that we assign to the send_after call. This ref is then saved to our GenServer state, and upon the call to :stop_resouce, that ref is found and used to initiate a call to <code>Process.cancel_timer/2</code>, which will stop the service, until it is restarted.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_cast</span><span>({</span><span style="color:#a3be8c;">:stop_resource</span><span>, sym}, state) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(state, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">State</span><span>&quot;)
+</span><span>  </span><span style="color:#b48ead;">case</span><span> sym </span><span style="color:#b48ead;">do
+</span><span>    </span><span style="color:#a3be8c;">:images </span><span>-&gt; </span><span style="color:#ebcb8b;">Process</span><span>.cancel_timer(state.images_ref)
+</span><span>    </span><span style="color:#a3be8c;">:reader </span><span>-&gt; </span><span style="color:#ebcb8b;">Process</span><span>.cancel_timer(state.reader_ref)
+</span><span>    </span><span style="color:#a3be8c;">:ets </span><span>-&gt; </span><span style="color:#ebcb8b;">Process</span><span>.cancel_timer(state.ets_ref)
+</span><span>    _ -&gt; </span><span style="color:#ebcb8b;">Process</span><span>.cancel_timer(state.reader_ref)
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.puts(sym)
+</span><span>  {</span><span style="color:#a3be8c;">:noreply</span><span>, state}
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>If this were a production scenario, we would need to design some synchronization mechanisms to ensure that the scores are being persisted in the database in a timely manner.</p>
+<hr />
+<p>StreamData
+StreamData is a library that provides two very useful features for Elixir apps: data generation and property testing. While I was primarily interested in the data generation for the services task, I did briefly introduce a property test using the library. </p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>property &quot;</span><span style="color:#a3be8c;">struct! macro correctly translates UserScore struct</span><span>&quot; </span><span style="color:#b48ead;">do
+</span><span>  check all username &lt;- binary(),
+</span><span>            score &lt;- integer(),
+</span><span>            joined &lt;- naive_dt_generator() </span><span style="color:#b48ead;">do
+</span><span>    assert struct!(</span><span style="color:#ebcb8b;">UserScore</span><span>, %{</span><span style="color:#d08770;">username:</span><span> username, </span><span style="color:#d08770;">score:</span><span> score, </span><span style="color:#d08770;">joined:</span><span> joined}) == %</span><span style="color:#ebcb8b;">UserScore</span><span>{</span><span style="color:#d08770;">username:</span><span> username, </span><span style="color:#d08770;">score:</span><span> score, </span><span style="color:#d08770;">joined:</span><span> joined}
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>For the data generation side, though, the process is much more straightforward. For this particular service I simply want to create some arbitrary data so that we can send it back via the GenServer and then react to that data, in this case by plotting the points on a map. So while our data here is completely generated, the process would be the exact same to just swap in whatever backend processes you might have.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">generate_data </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#65737e;"># Get 10 lists of random # of tuples
+</span><span>  list_of_lists =
+</span><span>    </span><span style="color:#ebcb8b;">StreamData</span><span>.list_of(
+</span><span>      </span><span style="color:#ebcb8b;">StreamData</span><span>.tuple({
+</span><span>        </span><span style="color:#ebcb8b;">StreamData</span><span>.float(</span><span style="color:#d08770;">min: 0</span><span>, </span><span style="color:#d08770;">max: </span><span>@</span><span style="color:#bf616a;">max</span><span>),
+</span><span>        </span><span style="color:#ebcb8b;">StreamData</span><span>.float(</span><span style="color:#d08770;">min: 0</span><span>, </span><span style="color:#d08770;">max: </span><span>@</span><span style="color:#bf616a;">max_2</span><span>)}
+</span><span>      )
+</span><span>    ) |&gt; </span><span style="color:#ebcb8b;">Enum</span><span>.take(</span><span style="color:#d08770;">10</span><span>)
+</span><span>  combined_list = </span><span style="color:#ebcb8b;">Enum</span><span>.reduce(list_of_lists, </span><span style="color:#b48ead;">fn</span><span> x, acc -&gt; x ++ acc </span><span style="color:#b48ead;">end</span><span>)
+</span><span>  combined_list
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<hr />
+<h4 id="websockex">WebSockex</h4>
+<p><a href="https://hexdocs.pm/websockex/WebSockex.html">WebSockex</a> is a popular Elixir websocket client, which is an implementation of a GenServer which makes our job very similar to the ones proceeding it. Given that it is just another GenServer, we are able to use the same callback methods to interact with it. If you go to the WebSockex docs you can see that there are some slight variants and additions, but for the most part it is still the same <code>handle_info/2</code> and <code>handle_cast/2</code> that we are used to.</p>
+<p>But, since it is a websocket client, <code>handle_call/2</code> is replaced with <code>handle_frame/2</code>.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span>@</span><span style="color:#bf616a;">impl </span><span style="color:#d08770;">true
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">handle_frame</span><span>({</span><span style="color:#a3be8c;">:text</span><span>, data}, state) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">Logger</span><span>.info(&quot;</span><span style="color:#a3be8c;">Received: #{</span><span>inspect(data)}&quot;)
+</span><span>  new_message = </span><span style="color:#ebcb8b;">Jason</span><span>.decode!(data)
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(new_message, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">NEW MESSAGE HEY</span><span>&quot;)
+</span><span>  </span><span style="color:#b48ead;">case</span><span> new_message </span><span style="color:#b48ead;">do
+</span><span>    %{&quot;</span><span style="color:#a3be8c;">event</span><span>&quot; =&gt; &quot;</span><span style="color:#a3be8c;">heartbeat</span><span>&quot;} -&gt; </span><span style="color:#ebcb8b;">IO</span><span>.puts(&quot;</span><span style="color:#a3be8c;">Heartbeat</span><span>&quot;)
+</span><span>    %{&quot;</span><span style="color:#a3be8c;">connectionID</span><span>&quot; =&gt; conn, &quot;</span><span style="color:#a3be8c;">event</span><span>&quot; =&gt; event, &quot;</span><span style="color:#a3be8c;">status</span><span>&quot; =&gt; status, &quot;</span><span style="color:#a3be8c;">version</span><span>&quot; =&gt; version} -&gt; </span><span style="color:#ebcb8b;">IO</span><span>.puts(&quot;</span><span style="color:#a3be8c;">Connection</span><span>&quot;)
+</span><span>    new_message when map_size(new_message) == </span><span style="color:#d08770;">6 </span><span>-&gt; </span><span style="color:#ebcb8b;">IO</span><span>.puts(&quot;</span><span style="color:#a3be8c;">Other 6 Connection</span><span>&quot;)
+</span><span>    _ -&gt; broadcast(new_message)
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span>  {</span><span style="color:#a3be8c;">:ok</span><span>, state}
+</span><span style="color:#b48ead;">end
+</span><span>[...]
+</span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">broadcast</span><span>(msg) </span><span style="color:#b48ead;">do
+</span><span>  </span><span style="color:#ebcb8b;">IO</span><span>.inspect(msg, </span><span style="color:#d08770;">label: </span><span>&quot;</span><span style="color:#a3be8c;">Broadcast MSG</span><span>&quot;)
+</span><span>  </span><span style="color:#b48ead;">case </span><span style="color:#ebcb8b;">Kernel</span><span>.elem(</span><span style="color:#ebcb8b;">List</span><span>.pop_at(msg, </span><span style="color:#d08770;">2</span><span>), </span><span style="color:#d08770;">0</span><span>) </span><span style="color:#b48ead;">do
+</span><span>    &quot;</span><span style="color:#a3be8c;">spread</span><span>&quot; -&gt; </span><span style="color:#ebcb8b;">StreamHandlerWeb</span><span>.</span><span style="color:#ebcb8b;">Endpoint</span><span>.broadcast!(&quot;</span><span style="color:#a3be8c;">websocket</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">new_spread</span><span>&quot;, msg)
+</span><span>    &quot;</span><span style="color:#a3be8c;">book-10</span><span>&quot; -&gt; </span><span style="color:#ebcb8b;">StreamHandlerWeb</span><span>.</span><span style="color:#ebcb8b;">Endpoint</span><span>.broadcast!(&quot;</span><span style="color:#a3be8c;">websocket</span><span>&quot;, &quot;</span><span style="color:#a3be8c;">new_message</span><span>&quot;, msg)
+</span><span>    </span><span style="color:#65737e;"># Just subscribing to the ticker endpoint
+</span><span>    </span><span style="color:#65737e;"># &quot;ticker&quot; -&gt; StreamHandlerWeb.Endpoint.broadcast!(&quot;websocket&quot;, &quot;new_ticker&quot;, msg)
+</span><span>    _ -&gt; </span><span style="color:#ebcb8b;">IO</span><span>.puts(&quot;</span><span style="color:#a3be8c;">Ugh</span><span>&quot;)
+</span><span>  </span><span style="color:#b48ead;">end
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>I won't go into the details on the actual data structures here as they are not really relevant, but essentially of these subscriptions returns a JSON structure with some fields indicting prices and bids for each resource.</p>
+<hr />
+<h4 id="file-read">File Read</h4>
+<p>This one is certainly nothing special. I just wanted to include it because it is such a common task and eventually you will probably have to do something similar, so it is nice to know it works in much the same way.</p>
+<hr />
+<h4 id="observer-phoenix-dashboard">Observer/Phoenix Dashboard</h4>
+<p>Despite the simplicity of our services it does still result in a lot of activity, which led me to remember about using erlang observer to take a look at running systems. Turns out there are some extra steps to be able to connect to that the running Iex session, but luckily Phoenix ships with a feature called LiveDashboard which basically takes all the :observer information make it available through LiveView route. You can also add your own metrics to customize it. I have not gotten that far yet though so I will just show you some basic screenshots of what it gives us just out of the box.</p>
+<p>If you do want to use :observer, all you need to do is add it to the extra_applications list, along with :wx. and :os_mon. You can leave off :os_mon if uninterested in OS metrics.</p>
+<pre data-lang="elixir" style="background-color:#2b303b;color:#c0c5ce;" class="language-elixir "><code class="language-elixir" data-lang="elixir"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">application </span><span style="color:#b48ead;">do
+</span><span>  [
+</span><span>    </span><span style="color:#d08770;">mod: </span><span>{</span><span style="color:#ebcb8b;">StreamHandler</span><span>.</span><span style="color:#ebcb8b;">Application</span><span>, []},
+</span><span>    </span><span style="color:#d08770;">extra_applications: </span><span>[</span><span style="color:#a3be8c;">:logger</span><span>, </span><span style="color:#a3be8c;">:runtime_tools</span><span>, </span><span style="color:#a3be8c;">:wx</span><span>, </span><span style="color:#a3be8c;">:observer</span><span>, </span><span style="color:#a3be8c;">:os_mon</span><span>]
+</span><span>  ]
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>Along with the standard overview/dashboard UI and metrics that you get, you can also look at each individual process.</p>
+<p><img src="/images/elixir/pdash_process.png#md-img-vert" alt="png" /></p>
+<p>This is certainly one area that I plan to explore some more as I continue, but it does show some of the nice built-in tools that are available.</p>
+<hr />
+<p>All in all this was a very low effort project that resulted in some pretty good, yet simple, concurrent behavior. I plan to keep scaling this up to see how things keep performing, so hopefully I can follow up soon with some better APIs and maybe some GenServers that actually do something!</p>
+<p><a href="https://github.com/r4z4/stream_handler">If you would like to, you can view the source code here</a></p>
+<p>Thanks for reading!</p>
+
+
+    </div>
+  </section>
+</body>
+
+</html>
